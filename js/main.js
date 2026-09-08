@@ -131,6 +131,9 @@ function initializeUI() {
     setupPolygonButton();
     setupComunasButton();
     
+    // Configurar botón Guardar mapa
+    setupSaveMapButton();
+    
     // Sistema de visualización de regionalizaciones
     if (typeof initializeRegionalizaciones === 'function') {
         initializeRegionalizaciones();
@@ -230,4 +233,25 @@ function getDepartmentCode(departmentName) {
 function isGBADepartment(departmentName) {
     const code = getDepartmentCode(departmentName);
     return code ? gbaCodes.includes(code) : false;
+}
+
+
+/**
+ * CONFIGURA EL BOTÓN GUARDAR MAPA
+ * Abre el modal de autenticación para guardar el mapa
+ */
+function setupSaveMapButton() {
+    const saveBtn = document.getElementById('save-map-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            // Verificar si el usuario ya está autenticado
+            // Si no, mostrar modal
+            if (typeof window.showAuthModal === 'function') {
+                window.showAuthModal();
+            } else {
+                console.error('❌ Módulo auth no cargado');
+                alert('Error: el sistema de autenticación no está disponible.');
+            }
+        });
+    }
 }
