@@ -18,38 +18,29 @@ if (typeof SUPABASE_CONFIG === 'undefined') {
     console.error('❌ SUPABASE_CONFIG no definido. Verificar build.js');
 }
 
-// Crear instancia de Supabase (usando CDN o importación)
-// Asumimos que ya cargaste la librería de Supabase desde CDN
-// Si no, agregar en index.html: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
+// Crear instancia de Supabase (usando CDN)
+// IMPORTANTE: usamos un nombre distinto a 'supabase' para evitar conflicto con la variable global
 const supabaseUrl = window.SUPABASE_CONFIG.url;
 const supabaseAnonKey = window.SUPABASE_CONFIG.anonKey;
-const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // =============================================
 // ESTADO DEL MÓDULO
 // =============================================
 
-let currentEmail = ''; // Guarda el email mientras se espera el código
-let isWaitingForCode = false; // Indica si ya se envió el código
+let currentEmail = '';
+let isWaitingForCode = false;
 
 // =============================================
 // FUNCIONES DE AUTENTICACIÓN
 // =============================================
 
-/**
- * ENVÍA UN CÓDIGO DE VERIFICACIÓN AL EMAIL DEL USUARIO
- * @param {string} email - Correo electrónico del usuario
- * @returns {Promise<boolean>} - True si se envió correctamente
- */
 async function sendVerificationCode(email) {
     try {
-        // Usar signInWithOtp para enviar el código OTP por email
-        const { data, error } = await supabase.auth.signInWithOtp({
+        const { data, error } = await supabaseClient.auth.signInWithOtp({
             email: email,
             options: {
                 // No usamos redirectTo porque el usuario ingresa el código manualmente
-                // El tipo de OTP por defecto es 'email' (código de 6 dígitos)
             }
         });
 
@@ -69,18 +60,12 @@ async function sendVerificationCode(email) {
     }
 }
 
-/**
- * VERIFICA EL CÓDIGO INGRESADO POR EL USUARIO
- * @param {string} email - Email del usuario (para confirmar)
- * @param {string} token - Código de 6 dígitos
- * @returns {Promise<{success: boolean, user: Object|null}>}
- */
 async function verifyCode(email, token) {
     try {
-        const { data, error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabaseClient.auth.verifyOtp({
             email: email,
             token: token,
-            type: 'email' // Tipo de verificación OTP
+            type: 'email'
         });
 
         if (error) {
@@ -93,7 +78,6 @@ async function verifyCode(email, token) {
         isWaitingForCode = false;
         currentEmail = '';
 
-        // Crear o actualizar perfil en la tabla public.profiles
         await createOrUpdateProfile(data.user);
 
         return { success: true, user: data.user };
@@ -103,37 +87,28 @@ async function verifyCode(email, token) {
     }
 }
 
-/**
- * CREA O ACTUALIZA EL PERFIL DEL USUARIO EN LA TABLA profiles
- * @param {Object} user - Objeto usuario de Supabase
- */
 async function createOrUpdateProfile(user) {
     if (!user) return;
 
-    // Datos básicos del perfil
     const profileData = {
         id: user.id,
         email: user.email,
-        // Si quieres pedir nombre en otro paso, puedes agregarlo después
-        // Por ahora solo guardamos email y fecha de creación si no existe
         updated_at: new Date().toISOString()
     };
 
-    // Verificar si el perfil ya existe
-    const { data: existingProfile, error: fetchError } = await supabase
+    const { data: existingProfile, error: fetchError } = await supabaseClient
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no encontrado
+    if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('❌ Error al verificar perfil:', fetchError);
         return;
     }
 
     if (existingProfile) {
-        // Actualizar perfil existente (solo updated_at)
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseClient
             .from('profiles')
             .update({ updated_at: profileData.updated_at })
             .eq('id', user.id);
@@ -144,8 +119,7 @@ async function createOrUpdateProfile(user) {
             console.log('✅ Perfil actualizado para:', user.email);
         }
     } else {
-        // Crear nuevo perfil
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseClient
             .from('profiles')
             .insert([{
                 id: user.id,
@@ -167,18 +141,12 @@ async function createOrUpdateProfile(user) {
 // GESTIÓN DEL MODAL DE AUTENTICACIÓN
 // =============================================
 
-/**
- * MUESTRA EL MODAL PARA INGRESAR EMAIL Y CÓDIGO
- * Se activa al hacer clic en "Guardar mapa"
- */
 function showAuthModal() {
-    // Si ya hay un modal abierto, no crear otro
     if (document.getElementById('auth-modal')) {
         document.getElementById('auth-modal').style.display = 'flex';
         return;
     }
 
-    // Crear el modal dinámicamente
     const modal = document.createElement('div');
     modal.id = 'auth-modal';
     modal.style.cssText = `
@@ -192,7 +160,6 @@ function showAuthModal() {
         font-family: Arial, sans-serif;
     `;
 
-    // Contenido del modal
     modal.innerHTML = `
         <div style="
             background: white;
@@ -291,7 +258,6 @@ function showAuthModal() {
 
     document.body.appendChild(modal);
 
-    // Referencias a elementos
     const emailInput = document.getElementById('auth-email');
     const codeInput = document.getElementById('auth-code');
     const sendBtn = document.getElementById('auth-send-code');
@@ -304,14 +270,12 @@ function showAuthModal() {
     const successDiv = document.getElementById('auth-success');
     const errorDiv = document.getElementById('auth-error');
 
-    // Mostrar errores
     function showError(msg) {
         errorDiv.style.display = 'block';
         errorDiv.textContent = msg;
         setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
     }
 
-    // Enviar código
     sendBtn.addEventListener('click', async function() {
         const email = emailInput.value.trim();
         if (!email || !email.includes('@')) {
@@ -328,12 +292,10 @@ function showAuthModal() {
         if (success) {
             stepEmail.style.display = 'none';
             stepCode.style.display = 'block';
-            // Enfocar el campo de código
             setTimeout(() => codeInput.focus(), 300);
         }
     });
 
-    // Verificar código
     verifyBtn.addEventListener('click', async function() {
         const email = emailInput.value.trim();
         const token = codeInput.value.trim();
@@ -352,13 +314,10 @@ function showAuthModal() {
         if (result.success) {
             stepCode.style.display = 'none';
             successDiv.style.display = 'block';
-            // Aquí puedes guardar el estado del mapa en la base de datos
-            // Por ahora solo mostramos éxito
             console.log('✅ Usuario autenticado y mapa guardado (simulado)');
         }
     });
 
-    // Reenviar código
     resendLink.addEventListener('click', async function(e) {
         e.preventDefault();
         const email = emailInput.value.trim();
@@ -372,7 +331,6 @@ function showAuthModal() {
         }
     });
 
-    // Cerrar modal
     function closeModal() {
         if (modal.parentNode) modal.parentNode.removeChild(modal);
         isWaitingForCode = false;
@@ -385,7 +343,6 @@ function showAuthModal() {
         if (e.target === modal) closeModal();
     });
 
-    // Presionar Enter en campos
     emailInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') sendBtn.click();
     });
@@ -398,10 +355,7 @@ function showAuthModal() {
 // EXPOSICIÓN PÚBLICA PARA OTROS MÓDULOS
 // =============================================
 
-// Hacer disponible la función showAuthModal globalmente
 window.showAuthModal = showAuthModal;
-
-// También exponer el cliente Supabase por si se necesita en otros lugares
-window.supabaseClient = supabase;
+window.supabaseClient = supabaseClient;
 
 console.log('✅ Módulo de autenticación OTP cargado');
