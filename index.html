@@ -36,24 +36,17 @@
         <div class="controls">
             <div class="controls-top-row">
                 <button id="reset-btn" class="reset-button">Reestablecer valores</button>
+                <div class="division-control">
+                    <label for="division-count">Número de divisiones:</label>
+                    <div class="division-count-wrapper">
+                        <input type="text" id="division-count" value="3" class="division-count-input" inputmode="numeric" maxlength="2">
+                        <button type="button" id="division-decrease" class="division-count-btn" aria-label="Disminuir divisiones">−</button>
+                        <button type="button" id="division-increase" class="division-count-btn" aria-label="Aumentar divisiones">+</button>
+                    </div>
+                </div>
+                <button id="polygon-btn" class="polygon-button">Armar polígono de selección</button>
                 <button id="save-map-btn" class="save-button">Guardar y compartir propuesta</button>
             </div>
-            
-            <!-- Botón para armar polígono de selección -->
-            <button id="polygon-btn" class="polygon-button">Armar polígono de selección</button>
-
-            <!-- Botón para guardar el mapa -->
-            <button id="save-map-btn" class="save-button">Guardar mapa</button>
-            
-           <!-- Control: Número de divisiones -->
-<div class="division-control">
-    <label for="division-count">Número de divisiones:</label>
-    <div class="division-count-wrapper">
-        <input type="text" id="division-count" value="3" class="division-count-input" inputmode="numeric" maxlength="2">
-        <button type="button" id="division-decrease" class="division-count-btn" aria-label="Disminuir divisiones">−</button>
-        <button type="button" id="division-increase" class="division-count-btn" aria-label="Aumentar divisiones">+</button>
-    </div>
-</div>
             
             <!-- Control: Regionalizaciones ya existentes -->
             <div class="region-control">
