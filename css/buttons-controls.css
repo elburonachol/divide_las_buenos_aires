@@ -77,7 +77,7 @@
    ============================================= */
 
 .save-button {
-    background: #3498db;
+    background: #27ae60;
     color: white;
     border: none;
     padding: 12px 25px;
@@ -90,7 +90,7 @@
 }
 
 .save-button:hover {
-    background: #2980b9;
+    background: #219a52;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
