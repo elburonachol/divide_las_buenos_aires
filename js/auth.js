@@ -1,27 +1,24 @@
 /*
- * MÓDULO DE AUTENTICACIÓN POR CÓDIGO OTP (EMAIL)
+ * MÓDULO DE AUTENTICACIÓN POR MAGIC LINK (EMAIL)
  * 
  * Responsabilidades:
- * - Manejo del flujo de autenticación con código de un solo uso
- * - Envío de código al email del usuario
- * - Verificación del código y creación de sesión
- * - Gestión del modal de ingreso de email y código
+ * - Manejo del flujo de autenticación con enlace mágico por email
+ * - Envío del enlace al email del usuario
+ * - Detección de sesión al regresar desde el enlace
  * - Creación/actualización del perfil del usuario en la tabla profiles
+ * - Gestión del modal de ingreso de email y confirmación
  */
 
 // =============================================
 // CONFIGURACIÓN DEL CLIENTE SUPABASE
 // =============================================
 
-// Asegurarse de que la configuración esté disponible
-if (typeof SUPABASE_CONFIG === 'undefined') {
+if (typeof window.SUPABASE_CONFIG === 'undefined') {
     console.error('❌ SUPABASE_CONFIG no definido. Verificar build.js');
 }
 
-// Crear instancia de Supabase (usando CDN)
-// IMPORTANTE: usamos un nombre distinto a 'supabase' para evitar conflicto con la variable global
-const supabaseUrl = window.SUPABASE_CONFIG.url;
-const supabaseAnonKey = window.SUPABASE_CONFIG.anonKey;
+const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || '';
+const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || '';
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // =============================================
@@ -29,64 +26,44 @@ const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey
 // =============================================
 
 let currentEmail = '';
-let isWaitingForCode = false;
 
 // =============================================
 // FUNCIONES DE AUTENTICACIÓN
 // =============================================
 
-async function sendVerificationCode(email) {
+/**
+ * ENVÍA UN ENLACE MÁGICO AL EMAIL DEL USUARIO
+ * @param {string} email - Correo electrónico del usuario
+ * @returns {Promise<boolean>} - True si se envió correctamente
+ */
+async function sendMagicLink(email) {
     try {
+        const redirectUrl = window.location.origin + window.location.pathname;
         const { data, error } = await supabaseClient.auth.signInWithOtp({
             email: email,
             options: {
-                // No usamos redirectTo porque el usuario ingresa el código manualmente
+                emailRedirectTo: redirectUrl
             }
         });
 
         if (error) {
-            console.error('❌ Error al enviar código:', error);
-            alert('Error al enviar el código. Verifica tu email.');
+            console.error('❌ Error al enviar enlace:', error);
             return false;
         }
 
-        console.log('✅ Código enviado a:', email);
+        console.log('✅ Enlace mágico enviado a:', email);
         currentEmail = email;
-        isWaitingForCode = true;
         return true;
     } catch (err) {
-        console.error('❌ Excepción en sendVerificationCode:', err);
+        console.error('❌ Excepción en sendMagicLink:', err);
         return false;
     }
 }
 
-async function verifyCode(email, token) {
-    try {
-        const { data, error } = await supabaseClient.auth.verifyOtp({
-            email: email,
-            token: token,
-            type: 'email'
-        });
-
-        if (error) {
-            console.error('❌ Error al verificar código:', error);
-            alert('Código inválido o expirado. Intenta nuevamente.');
-            return { success: false, user: null };
-        }
-
-        console.log('✅ Usuario autenticado:', data.user);
-        isWaitingForCode = false;
-        currentEmail = '';
-
-        await createOrUpdateProfile(data.user);
-
-        return { success: true, user: data.user };
-    } catch (err) {
-        console.error('❌ Excepción en verifyCode:', err);
-        return { success: false, user: null };
-    }
-}
-
+/**
+ * CREA O ACTUALIZA EL PERFIL DEL USUARIO EN LA TABLA profiles
+ * @param {Object} user - Objeto usuario de Supabase
+ */
 async function createOrUpdateProfile(user) {
     if (!user) return;
 
@@ -138,9 +115,51 @@ async function createOrUpdateProfile(user) {
 }
 
 // =============================================
+// DETECCIÓN DE SESIÓN AL REGRESAR DEL MAGIC LINK
+// =============================================
+
+/**
+ * ESCUCHA CAMBIOS EN EL ESTADO DE AUTENTICACIÓN
+ * Cuando el usuario regresa desde el enlace mágico, se detecta la sesión
+ * y se muestra el mensaje de éxito con la URL para compartir
+ */
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    console.log('🔐 Auth state change:', event);
+    
+    if (event === 'SIGNED_IN' && session && session.user) {
+        // El usuario acaba de iniciar sesión (vía magic link)
+        await createOrUpdateProfile(session.user);
+        
+        // Generar URL para compartir la propuesta (placeholder)
+        const shareUrl = generateShareUrl();
+        
+        // Mostrar modal de éxito
+        showSuccessModal(session.user.email, shareUrl);
+        
+        // Limpiar el hash de la URL para evitar reprocesamiento
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+});
+
+/**
+ * GENERA UNA URL PARA COMPARTIR LA PROPUESTA
+ * TODO: Implementar la lógica real de guardado y generación de URL
+ * @returns {string} - URL para compartir
+ */
+function generateShareUrl() {
+    // Placeholder - en el futuro se generará un ID único y se guardará en la BD
+    return window.location.origin + window.location.pathname;
+}
+
+// =============================================
 // GESTIÓN DEL MODAL DE AUTENTICACIÓN
 // =============================================
 
+/**
+ * MUESTRA EL MODAL PARA INGRESAR EL EMAIL
+ */
 function showAuthModal() {
     if (document.getElementById('auth-modal')) {
         document.getElementById('auth-modal').style.display = 'flex';
@@ -179,9 +198,9 @@ function showAuthModal() {
                 cursor: pointer;
                 color: #999;
             ">×</button>
-            <h3 style="margin-top: 0; color: #333;">Guardar mapa</h3>
+            <h3 style="margin-top: 0; color: #333;">Guardar y compartir propuesta</h3>
             <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                Ingresa tu correo electrónico para recibir un código de verificación.
+                Ingresa tu correo electrónico y te enviaremos un enlace para acceder y guardar tu propuesta.
             </p>
             
             <div id="auth-step-email">
@@ -195,7 +214,7 @@ function showAuthModal() {
                     margin-bottom: 15px;
                     font-size: 16px;
                 ">
-                <button id="auth-send-code" style="
+                <button id="auth-send-link" style="
                     background: #3388ff;
                     color: white;
                     border: none;
@@ -204,52 +223,19 @@ function showAuthModal() {
                     cursor: pointer;
                     font-size: 16px;
                     width: 100%;
-                ">Enviar código</button>
+                ">Enviar enlace de acceso</button>
             </div>
 
-            <div id="auth-step-code" style="display: none;">
-                <label for="auth-code" style="display: block; font-weight: bold; margin-bottom: 5px;">Código de verificación</label>
-                <input type="text" id="auth-code" placeholder="Ej: 123456" style="
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    box-sizing: border-box;
-                    margin-bottom: 15px;
-                    font-size: 16px;
-                    text-align: center;
-                    letter-spacing: 8px;
-                    font-weight: bold;
-                " maxlength="6">
-                <button id="auth-verify-code" style="
-                    background: #2ca02c;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    width: 100%;
-                ">Verificar código</button>
-                <p style="font-size: 12px; color: #999; margin-top: 10px;">
-                    ¿No recibiste el código? <a href="#" id="auth-resend-link">Reenviar</a>
-                </p>
-            </div>
-
-            <div id="auth-success" style="display: none; text-align: center;">
-                <span style="font-size: 40px;">✅</span>
-                <h4 style="margin: 10px 0 5px;">¡Mapa guardado!</h4>
+            <div id="auth-step-sent" style="display: none; text-align: center;">
+                <span style="font-size: 40px;">📧</span>
+                <h4 style="margin: 10px 0 5px;">Revisa tu correo</h4>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-                    Tu mapa ha sido guardado exitosamente.
+                    Te enviamos un enlace a <strong id="auth-sent-email"></strong>.
+                    Hacé clic en el enlace para acceder y guardar tu propuesta.
                 </p>
-                <button id="auth-success-close" style="
-                    background: #3388ff;
-                    color: white;
-                    border: none;
-                    padding: 8px 20px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                ">Cerrar</button>
+                <p style="font-size: 12px; color: #999;">
+                    ¿No lo recibiste? Revisá tu carpeta de spam.
+                </p>
             </div>
 
             <div id="auth-error" style="display: none; color: #d32f2f; font-size: 14px; margin-top: 10px;"></div>
@@ -259,15 +245,11 @@ function showAuthModal() {
     document.body.appendChild(modal);
 
     const emailInput = document.getElementById('auth-email');
-    const codeInput = document.getElementById('auth-code');
-    const sendBtn = document.getElementById('auth-send-code');
-    const verifyBtn = document.getElementById('auth-verify-code');
+    const sendBtn = document.getElementById('auth-send-link');
     const closeBtn = document.getElementById('auth-modal-close');
-    const successCloseBtn = document.getElementById('auth-success-close');
-    const resendLink = document.getElementById('auth-resend-link');
     const stepEmail = document.getElementById('auth-step-email');
-    const stepCode = document.getElementById('auth-step-code');
-    const successDiv = document.getElementById('auth-success');
+    const stepSent = document.getElementById('auth-step-sent');
+    const sentEmailSpan = document.getElementById('auth-sent-email');
     const errorDiv = document.getElementById('auth-error');
 
     function showError(msg) {
@@ -285,60 +267,25 @@ function showAuthModal() {
 
         sendBtn.disabled = true;
         sendBtn.textContent = 'Enviando...';
-        const success = await sendVerificationCode(email);
+        const success = await sendMagicLink(email);
         sendBtn.disabled = false;
-        sendBtn.textContent = 'Enviar código';
+        sendBtn.textContent = 'Enviar enlace de acceso';
 
         if (success) {
+            sentEmailSpan.textContent = email;
             stepEmail.style.display = 'none';
-            stepCode.style.display = 'block';
-            setTimeout(() => codeInput.focus(), 300);
-        }
-    });
-
-    verifyBtn.addEventListener('click', async function() {
-        const email = emailInput.value.trim();
-        const token = codeInput.value.trim();
-
-        if (!token || token.length < 6) {
-            showError('Ingresa el código de 6 dígitos que recibiste por email.');
-            return;
-        }
-
-        verifyBtn.disabled = true;
-        verifyBtn.textContent = 'Verificando...';
-        const result = await verifyCode(email, token);
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'Verificar código';
-
-        if (result.success) {
-            stepCode.style.display = 'none';
-            successDiv.style.display = 'block';
-            console.log('✅ Usuario autenticado y mapa guardado (simulado)');
-        }
-    });
-
-    resendLink.addEventListener('click', async function(e) {
-        e.preventDefault();
-        const email = emailInput.value.trim();
-        if (!email) {
-            showError('No hay email para reenviar. Vuelve al paso anterior.');
-            return;
-        }
-        const success = await sendVerificationCode(email);
-        if (success) {
-            alert('Código reenviado a ' + email);
+            stepSent.style.display = 'block';
+        } else {
+            showError('Error al enviar el enlace. Verifica tu correo e intenta nuevamente.');
         }
     });
 
     function closeModal() {
         if (modal.parentNode) modal.parentNode.removeChild(modal);
-        isWaitingForCode = false;
         currentEmail = '';
     }
 
     closeBtn.addEventListener('click', closeModal);
-    successCloseBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', function(e) {
         if (e.target === modal) closeModal();
     });
@@ -346,8 +293,114 @@ function showAuthModal() {
     emailInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') sendBtn.click();
     });
-    codeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') verifyBtn.click();
+}
+
+/**
+ * MUESTRA EL MODAL DE ÉXITO DESPUÉS DE AUTENTICARSE
+ * @param {string} email - Email del usuario autenticado
+ * @param {string} shareUrl - URL para compartir la propuesta
+ */
+function showSuccessModal(email, shareUrl) {
+    const existingModal = document.getElementById('auth-modal');
+    if (existingModal && existingModal.parentNode) {
+        existingModal.parentNode.removeChild(existingModal);
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'auth-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: Arial, sans-serif;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: relative;
+            text-align: center;
+        ">
+            <button id="auth-modal-close" style="
+                position: absolute;
+                top: 10px; right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #999;
+            ">×</button>
+            <span style="font-size: 50px;">✅</span>
+            <h3 style="margin: 10px 0 5px; color: #333;">¡Propuesta guardada!</h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                Tu propuesta ha sido guardada exitosamente.
+            </p>
+            <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
+                Compartí este enlace:
+            </p>
+            <div style="
+                background: #f5f5f5;
+                padding: 10px;
+                border-radius: 4px;
+                margin-bottom: 15px;
+                word-break: break-all;
+                font-size: 13px;
+                color: #333;
+            " id="auth-share-url">${shareUrl}</div>
+            <button id="auth-copy-url" style="
+                background: #3388ff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                margin-right: 8px;
+            ">Copiar enlace</button>
+            <button id="auth-success-close" style="
+                background: #999;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            ">Cerrar</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const closeBtn = document.getElementById('auth-modal-close');
+    const successCloseBtn = document.getElementById('auth-success-close');
+    const copyBtn = document.getElementById('auth-copy-url');
+    
+    function closeModal() {
+        if (modal.parentNode) modal.parentNode.removeChild(modal);
+    }
+    
+    closeBtn.addEventListener('click', closeModal);
+    successCloseBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+    
+    copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            copyBtn.textContent = '¡Copiado!';
+            setTimeout(() => { copyBtn.textContent = 'Copiar enlace'; }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+        });
     });
 }
 
@@ -358,4 +411,4 @@ function showAuthModal() {
 window.showAuthModal = showAuthModal;
 window.supabaseClient = supabaseClient;
 
-console.log('✅ Módulo de autenticación OTP cargado');
+console.log('✅ Módulo de autenticación por magic link cargado');
