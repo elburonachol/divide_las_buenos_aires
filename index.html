@@ -36,6 +36,7 @@
         <div class="controls">
             <div class="controls-top-row">
                 <button id="reset-btn" class="reset-button">Reestablecer valores</button>
+                <button id="save-map-btn" class="save-button">Guardar y compartir propuesta</button>
             </div>
             
             <!-- Botón para armar polígono de selección -->
@@ -44,27 +45,15 @@
             <!-- Botón para guardar el mapa -->
             <button id="save-map-btn" class="save-button">Guardar mapa</button>
             
-            <!-- Control: Número de divisiones -->
-            <div class="division-control">
-                <label for="division-count">Número de divisiones:</label>
-                <select id="division-count">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3" selected>3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
-                </select>
-            </div>
+           <!-- Control: Número de divisiones -->
+<div class="division-control">
+    <label for="division-count">Número de divisiones:</label>
+    <div class="division-count-wrapper">
+        <input type="text" id="division-count" value="3" class="division-count-input" inputmode="numeric" maxlength="2">
+        <button type="button" id="division-decrease" class="division-count-btn" aria-label="Disminuir divisiones">−</button>
+        <button type="button" id="division-increase" class="division-count-btn" aria-label="Aumentar divisiones">+</button>
+    </div>
+</div>
             
             <!-- Control: Regionalizaciones ya existentes -->
             <div class="region-control">
