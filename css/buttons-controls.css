@@ -71,3 +71,37 @@
         font-size: 13px;
     }
 }
+
+/* =============================================
+   BOTÓN GUARDAR Y COMPARTIR PROPUESTA
+   ============================================= */
+
+.save-button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.save-button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.save-button:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+    .save-button {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
