@@ -87,7 +87,7 @@ function getDepartmentStyle(feature) {
             fillColor: departmentGroups[groupId].color,
             fillOpacity: 0.8,
             color: 'white',  // Borde blanco para que se destaque sobre las regionalizaciones
-            weight: 2,       // Borde más grueso para departamentos asignados
+            weight: 1,       // Borde más grueso para departamentos asignados
             opacity: 1
         };
     }
@@ -143,7 +143,7 @@ function getComunaStyle(feature) {
             fillColor: departmentGroups[groupId].color,
             fillOpacity: 0.8,
             color: 'white',
-            weight: 2,
+            weight: 1,
             opacity: 1
         };
     }
