@@ -97,27 +97,32 @@
     white-space: nowrap;
 }
 
+/* =============================================
+   CONTROL DE TRANSPARENCIA (ex Opacidad)
+   ============================================= */
+
 .opacity-control label {
-    font-weight: 600;
-    color: #495057;
     font-size: 13px;
-    margin-bottom: 0; /* Override del display: block original */
+    font-weight: 600;
+    color: #555;
 }
 
 .opacity-control input[type="range"] {
-    width: 110px;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
     height: 6px;
     border-radius: 3px;
-    background: #dee2e6;
+    background: #ddd;
     outline: none;
-    -webkit-appearance: none;
-    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .opacity-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
+    appearance: none;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: #3498db;
     cursor: pointer;
@@ -126,8 +131,8 @@
 }
 
 .opacity-control input[type="range"]::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: #3498db;
     cursor: pointer;
