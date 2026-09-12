@@ -27,7 +27,7 @@ let regionalizacionesActivas = {
     educativas: false
 };
 
-let regionalizacionesOpacity = 0.7;
+let regionalizacionesOpacity = 0.1; // Inicia en 10% de transparencia
 
 // =============================================
 // PROPUESTA DE ESTILOS MEJORADOS PARA DIFERENCIACIÓN VISUAL
@@ -42,7 +42,7 @@ let regionalizacionesOpacity = 0.7;
 const regionalizacionesEstilos = {
     sanitarias: {
         color: '#FF6B6B',      // Rojo coral - bien visible
-        weight: 4,             // Aumentado de 3 a 4 para mejor visibilidad
+        weight: 5,             // Aumentado de 4 a 5 para mejor visibilidad
         dashArray: '8, 6',     // Patrón guión-medio
         opacity: 0.9,
         fillOpacity: 0,
@@ -50,7 +50,7 @@ const regionalizacionesEstilos = {
     },
     electorales: {
         color: '#4ECDC4',      // Turquesa - buen contraste
-        weight: 4,             // Aumentado de 2.5 a 4
+        weight: 55,             // Aumentado de 4 a 5
         dashArray: '12, 8, 2, 8', // Patrón complejo único
         opacity: 0.9,
         fillOpacity: 0,
@@ -58,7 +58,7 @@ const regionalizacionesEstilos = {
     },
     judiciales: {
         color: '#FFD166',      // Amarillo mostaza - muy visible
-        weight: 4,             // Aumentado de 3 a 4
+        weight: 5,             // Aumentado de 4 a 5
         dashArray: '5, 10',    // Guiones largos y espacios
         opacity: 0.9,
         fillOpacity: 0,
@@ -66,7 +66,7 @@ const regionalizacionesEstilos = {
     },
     educativas: {
         color: '#9B5DE5',      // Púrpura vibrante
-        weight: 3,             // Aumentado de 2 a 3
+        weight: 5,             // Aumentado de 3 a 5
         dashArray: '2, 6',     // Puntos y espacios
         opacity: 0.9,
         fillOpacity: 0,
@@ -148,14 +148,15 @@ function setupRegionalizacionesCheckboxes() {
 }
 
 /**
- * CONFIGURA EL SLIDER DE OPACIDAD
+ * CONFIGURA EL SLIDER DE TRANSPARENCIA
+ * 0% = totalmente opaco | 90% = muy transparente
  */
 function setupOpacitySlider() {
     const slider = document.getElementById('regionalizaciones-opacity');
     const valueDisplay = document.getElementById('opacity-value');
     
     if (slider && valueDisplay) {
-        // Inicializar con valor por defecto
+        // Inicializar con valor por defecto (10%)
         valueDisplay.textContent = Math.round(regionalizacionesOpacity * 100);
         slider.value = regionalizacionesOpacity * 100;
         
@@ -279,13 +280,18 @@ function getRegionalizacionFileName(tipo) {
 }
 
 /**
- * ACTUALIZA LA OPACIDAD DE TODAS LAS REGIONALIZACIONES ACTIVAS
+ * ACTUALIZA LA TRANSPARENCIA DE TODAS LAS REGIONALIZACIONES ACTIVAS
+ * El valor de opacidad Leaflet se invierte: 0% transparencia = opacidad 1.0
+ * @param {number} transparencia - Valor de transparencia (0 a 0.9)
  */
 function updateRegionalizacionesOpacity() {
+    // Invertir: transparencia 0% → opacidad 1.0 ; transparencia 90% → opacidad 0.1
+    const leafletOpacity = 1 - regionalizacionesOpacity;
+    
     Object.keys(regionalizacionesLayers).forEach(tipo => {
         const layer = regionalizacionesLayers[tipo];
         if (layer && regionalizacionesActivas[tipo]) {
-            layer.setStyle({ opacity: regionalizacionesOpacity });
+            layer.setStyle({ opacity: leafletOpacity });
         }
     });
 }
