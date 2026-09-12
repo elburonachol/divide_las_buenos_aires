@@ -311,43 +311,34 @@ function initializeDragAndDrop() {
     });
 
     // Configurar cada lista de división
-    divisionLists.forEach((divisionList, index) => {
-        if (divisionList) {
-            Sortable.create(divisionList, {
-                group: {
-                    name: 'departamentos',
-                    pull: true, // Se pueden sacar elementos
-                    put: true   // Se pueden soltar elementos
-                },
-                animation: 150,
-                ghostClass: 'dragging',
-                dragClass: 'dragging-item',
-                // Cuando se empieza a arrastrar
-                onChoose: function(evt) {
-                    // Comprimir todas las listas
-                    compressAllLists();
-                },
-                // Cuando se mueve sobre otro contenedor
-                onMove: function(evt) {
-                    // Expandir el contenedor sobre el que se está moviendo
-                    const toContainer = evt.to;
-                    expandContainer(toContainer);
-                },
-                // Cuando se suelta el elemento
-                onUnchoose: function(evt) {
-                    // Restaurar todos los contenedores a su tamaño original
-                    restoreAllLists();
-                },
-                onEnd: function(evt) {
-                    handleDepartmentMove(evt);
-                    // Ordenar la división después del movimiento
-                    sortDivisionList(index + 1);
-                    // Asegurar que no haya duplicados
-                    //removeDuplicatesFromDivision(index + 1);
-                    // Asegurar que se restauren los tamaños
-                    restoreAllLists();
-                }
-            });
+    Sortable.create(divisionList, {
+        group: {
+            name: 'departamentos',
+            pull: true,
+            put: true
+        },
+        animation: 150,
+        ghostClass: 'dragging',
+        dragClass: 'dragging-item',
+        onChoose: function(evt) {
+            // Comprimir todas las listas
+            compressAllLists();
+            // Expandir la caja actual inmediatamente
+            evt.from.parentElement.classList.add('expanded');
+        },
+        onMove: function(evt) {
+            // Expandir el contenedor sobre el que se está moviendo
+            const toContainer = evt.to;
+            expandContainer(toContainer);
+        },
+        onUnchoose: function(evt) {
+            // Restaurar todos los contenedores a su tamaño original
+            restoreAllLists();
+        },
+        onEnd: function(evt) {
+            handleDepartmentMove(evt);
+            sortDivisionList(index + 1);
+            restoreAllLists();
         }
     });
 }
@@ -373,23 +364,22 @@ function compressAllLists() {
 }
 
 /**
- * EXPANDE UN CONTENEDOR ESPECÍFICO
- * Se llama cuando se arrastra un elemento sobre un contenedor
+ * EXPANDE UN CONTENEDOR ESPECÍFICO DURANTE DRAG & DROP
  * @param {HTMLElement} container - El contenedor a expandir
  */
 function expandContainer(container) {
-    // Primero, restaurar todos los contenedores a su tamaño comprimido
+    // Primero, comprimir todos los contenedores
     compressAllLists();
     
     // Luego expandir el contenedor objetivo
     if (container.id === 'all-departments-list') {
-        // Es el listado principal
-        container.parentElement.classList.remove('compressed');
         container.parentElement.classList.add('expanded');
     } else if (container.id.startsWith('division-')) {
-        // Es una división
-        container.parentElement.classList.remove('compressed');
-        container.parentElement.classList.add('expanded');
+        // Es una división: agregar clase expanded al group-box padre
+        const groupBox = container.closest('.group-box');
+        if (groupBox) {
+            groupBox.classList.add('expanded');
+        }
     }
 }
 
@@ -402,7 +392,10 @@ function restoreAllLists() {
     for (let i = 1; i <= currentDivisionCount; i++) {
         const divisionList = document.getElementById(`division-${i}`);
         if (divisionList) {
-            divisionList.parentElement.classList.remove('compressed', 'expanded');
+            const groupBox = divisionList.closest('.group-box');
+            if (groupBox) {
+                groupBox.classList.remove('expanded', 'compressed');
+            }
         }
     }
     
