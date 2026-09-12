@@ -171,10 +171,6 @@
     .opacity-control input[type="range"] {
         flex: 1;
         width: auto;
-    }
-}
-    
-    .opacity-control input[type="range"] {
         max-width: 100%;
     }
 }
