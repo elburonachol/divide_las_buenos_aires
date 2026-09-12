@@ -20,6 +20,13 @@
 function initializeDivisionBoxes(newCount) {
     const container = document.getElementById('division-boxes-container');
     
+    // Sincronizar el input de número de divisiones
+    const divisionInput = document.getElementById('division-count');
+    if (divisionInput) {
+        divisionInput.value = newCount;
+        divisionInput.classList.remove('error');
+    }
+    
     // Guardar el estado actual antes del cambio para posible restauración
     const previousGroups = JSON.parse(JSON.stringify(departmentGroups));
     
