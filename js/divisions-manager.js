@@ -53,7 +53,10 @@ function initializeDivisionBoxes(newCount) {
         const groupBox = document.createElement('div');
         groupBox.className = 'group-box';
         groupBox.setAttribute('data-group-id', i);
-        groupBox.style.borderLeft = `4px solid ${color}`;
+        // Reemplazarla por:
+        groupBox.style.borderLeft = `8px solid ${color}`;
+        // Generar un tono claro del color para el fondo de la caja
+        groupBox.style.background = hexToLightTint(color, 0.85);
 
         groupBox.innerHTML = `
             <h3 class="editable-division-name" contenteditable="true">${defaultName}</h3>
@@ -476,4 +479,31 @@ function handleDepartmentMove(evt) {
     // Actualizar todo el estado de la aplicación
     notifyStateChange();
     sortMainList();
+}
+
+/**
+ * CONVIERTE UN COLOR HEX EN UN TONO MUY CLARO (TINT)
+ * @param {string} hex - Color en formato #RRGGBB
+ * @param {number} factor - Factor de claridad (0 a 1). 0.85 = muy claro.
+ * @returns {string} - Color hex claro
+ */
+function hexToLightTint(hex, factor) {
+    // Eliminar # si existe
+    hex = hex.replace('#', '');
+    
+    // Convertir a RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Mezclar con blanco
+    const newR = Math.round(r + (255 - r) * factor);
+    const newG = Math.round(g + (255 - g) * factor);
+    const newB = Math.round(b + (255 - b) * factor);
+    
+    // Convertir de vuelta a hex
+    return '#' + [newR, newG, newB].map(c => {
+        const hexStr = c.toString(16);
+        return hexStr.length === 1 ? '0' + hexStr : hexStr;
+    }).join('');
 }
