@@ -311,34 +311,39 @@ function initializeDragAndDrop() {
     });
 
     // Configurar cada lista de división
-    Sortable.create(divisionList, {
-        group: {
-            name: 'departamentos',
-            pull: true,
-            put: true
-        },
-        animation: 150,
-        ghostClass: 'dragging',
-        dragClass: 'dragging-item',
-        onChoose: function(evt) {
-            // Comprimir todas las listas
-            compressAllLists();
-            // Expandir la caja actual inmediatamente
-            evt.from.parentElement.classList.add('expanded');
-        },
-        onMove: function(evt) {
-            // Expandir el contenedor sobre el que se está moviendo
-            const toContainer = evt.to;
-            expandContainer(toContainer);
-        },
-        onUnchoose: function(evt) {
-            // Restaurar todos los contenedores a su tamaño original
-            restoreAllLists();
-        },
-        onEnd: function(evt) {
-            handleDepartmentMove(evt);
-            sortDivisionList(index + 1);
-            restoreAllLists();
+    divisionLists.forEach((divisionList, index) => {
+        if (divisionList) {
+            Sortable.create(divisionList, {
+                group: {
+                    name: 'departamentos',
+                    pull: true,
+                    put: true
+                },
+                animation: 150,
+                ghostClass: 'dragging',
+                dragClass: 'dragging-item',
+                onChoose: function(evt) {
+                    // Comprimir todas las listas
+                    compressAllLists();
+                    // Expandir la caja actual inmediatamente
+                    const groupBox = evt.from.closest('.group-box');
+                    if (groupBox) groupBox.classList.add('expanded');
+                },
+                onMove: function(evt) {
+                    // Expandir el contenedor sobre el que se está moviendo
+                    const toContainer = evt.to;
+                    expandContainer(toContainer);
+                },
+                onUnchoose: function(evt) {
+                    // Restaurar todos los contenedores a su tamaño original
+                    restoreAllLists();
+                },
+                onEnd: function(evt) {
+                    handleDepartmentMove(evt);
+                    sortDivisionList(index + 1);
+                    restoreAllLists();
+                }
+            });
         }
     });
 }
