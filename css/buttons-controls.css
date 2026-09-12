@@ -105,3 +105,24 @@
         font-size: 13px;
     }
 }
+
+/* Espaciado armónico entre controles principales */
+.controls-top-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.controls-top-row .division-control {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.controls-top-row .division-control label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+}
