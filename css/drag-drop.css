@@ -164,3 +164,32 @@
         font-size: 12px;
     }
 }
+
+/* =============================================
+   CAJAS DE DIVISIÓN CONTRAÍBLES
+   Sólo se muestra el nombre; los departamentos se
+   revelan al pasar el cursor (con delay) o durante
+   el drag & drop.
+   ============================================= */
+
+/* Estado por defecto: la lista de departamentos está oculta */
+.group-box .group-list {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    transition-delay: 0s;
+}
+
+/* Al pasar el cursor: se expande después de un delay razonable */
+.group-box:hover .group-list {
+    max-height: 140px;
+    overflow-y: auto;
+    transition-delay: 0.4s;
+}
+
+/* Durante drag & drop: se expande inmediatamente (controlado por JS con clase 'expanded') */
+.group-box.expanded .group-list {
+    max-height: 300px;
+    overflow-y: auto;
+    transition-delay: 0s;
+}
