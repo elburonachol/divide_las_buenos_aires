@@ -50,7 +50,7 @@ const regionalizacionesEstilos = {
     },
     electorales: {
         color: '#4ECDC4',      // Turquesa - buen contraste
-        weight: 55,             // Aumentado de 4 a 5
+        weight: 5,             // Aumentado de 4 a 5
         dashArray: '12, 8, 2, 8', // Patrón complejo único
         opacity: 0.9,
         fillOpacity: 0,
