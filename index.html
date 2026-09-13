@@ -29,6 +29,14 @@
         <p class="loader-message">Cargando datos...</p>
     </div>
 
+<div id="auth-top-bar" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 15px;">
+    <button id="access-draft-btn" class="access-draft-button">Acceder a mi propuesta borrador</button>
+    <div id="user-info" style="display: none; text-align: right; font-size: 13px;">
+        <div class="user-email"></div>
+        <div class="user-proposal-title" style="font-weight: bold; color: #27ae60;"></div>
+    </div>
+</div>
+    
     <div class="container">
         <h1>Divide (las) Buenos Aires</h1>
         
@@ -45,7 +53,9 @@
                     </div>
                 </div>
                 <button id="polygon-btn" class="polygon-button">Armar polígono de selección</button>
-                <button id="save-map-btn" class="save-button">Guardar y compartir propuesta</button>
+                <button id="save-map-btn" class="save-draft-button">Guardar borrador</button>
+                <button id="publish-btn" class="save-button" style="display: none;">Guardar y compartir propuesta</button>
+                <button id="unpublish-btn" class="unpublish-button" style="display: none;">Ocultar propuesta pública</button>
             </div>
             
             <!-- Control: Regionalizaciones ya existentes -->
