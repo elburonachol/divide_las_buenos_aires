@@ -883,4 +883,25 @@ window.supabaseClient = supabaseClient;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 
+// Configurar botones
+document.addEventListener('DOMContentLoaded', function() {
+    const saveBtn = document.getElementById('save-map-btn');
+    const publishBtn = document.getElementById('publish-btn');
+    const unpublishBtn = document.getElementById('unpublish-btn');
+    const accessBtn = document.getElementById('access-draft-btn');
+    
+    if (saveBtn) {
+        saveBtn.addEventListener('click', showSaveDraftModal);
+    }
+    if (publishBtn) {
+        publishBtn.addEventListener('click', showPublishModal);
+    }
+    if (unpublishBtn) {
+        unpublishBtn.addEventListener('click', showUnpublishModal);
+    }
+    if (accessBtn) {
+        accessBtn.addEventListener('click', showAccessDraftModal);
+    }
+});
+
 console.log('✅ Módulo de autenticación y propuestas cargado');
