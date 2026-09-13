@@ -143,6 +143,11 @@ function initializeUI() {
     initializeComparisonTable();
     updateRemainingCount();
     updateDivisionsTitle();
+
+    // Actualizar UI de autenticación
+    if (typeof updateAuthUI === 'function') {
+    updateAuthUI();
+    }
     
     console.log('✅ Interfaz de usuario inicializada');
 }
@@ -255,3 +260,35 @@ function setupSaveMapButton() {
         });
     }
 }
+
+/**
+ * DETECTA SI LA URL CORRESPONDE A UNA PROPUESTA PÚBLICA
+ * y carga los datos correspondientes
+ */
+async function checkPublicProposalRoute() {
+    const path = window.location.pathname;
+    const match = path.match(/\/propuesta\/([a-z0-9]+)/);
+    
+    if (match) {
+        const shareCode = match[1];
+        console.log('📋 Detectada ruta de propuesta pública:', shareCode);
+        
+        // Esperar a que Supabase esté listo
+        setTimeout(async () => {
+            if (typeof loadPublicProposal === 'function') {
+                const proposal = await loadPublicProposal(shareCode);
+                if (proposal && typeof applyProposalToUI === 'function') {
+                    applyProposalToUI(proposal);
+                }
+            }
+        }, 1000);
+    }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // ... código existente ...
+    
+    // Al final, verificar ruta de propuesta
+    checkPublicProposalRoute();
+});
