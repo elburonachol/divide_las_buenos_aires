@@ -126,3 +126,81 @@
     color: #555;
     white-space: nowrap;
 }
+
+/* =============================================
+   BOTÓN ACCEDER A PROPUESTA BORRADOR
+   ============================================= */
+
+.access-draft-button {
+    background: transparent;
+    color: #3388ff;
+    border: 2px solid #3388ff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.access-draft-button:hover {
+    background: #3388ff;
+    color: white;
+}
+
+/* =============================================
+   BOTÓN GUARDAR BORRADOR
+   ============================================= */
+
+.save-draft-button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.save-draft-button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* =============================================
+   BOTÓN OCULTAR PROPUESTA PÚBLICA
+   ============================================= */
+
+.unpublish-button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.unpublish-button:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* =============================================
+   INFORMACIÓN DE USUARIO EN TOP BAR
+   ============================================= */
+
+#user-info .user-email {
+    color: #666;
+}
+
+#user-info .user-proposal-title {
+    color: #27ae60;
+}
