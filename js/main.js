@@ -250,15 +250,16 @@ async function checkPublicProposalRoute() {
         const shareCode = match[1];
         console.log('📋 Detectada ruta de propuesta pública:', shareCode);
         
-        // Esperar a que Supabase esté listo
+        // Esperar a que los datos base y Supabase estén listos
+        // Usamos un pequeño delay para asegurarnos de que todo esté inicializado
         setTimeout(async () => {
-            if (typeof loadPublicProposal === 'function') {
+            if (typeof loadPublicProposal === 'function' && typeof applyProposalToUI === 'function') {
                 const proposal = await loadPublicProposal(shareCode);
-                if (proposal && typeof applyProposalToUI === 'function') {
+                if (proposal) {
                     applyProposalToUI(proposal);
                 }
             }
-        }, 1000);
+        }, 1500); // Aumentamos un poco el delay para dar tiempo a la carga
     }
 }
 
