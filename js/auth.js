@@ -292,25 +292,12 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         // Verificar si hay una propuesta pendiente en localStorage
         const pendingProposal = loadProposalFromLocalStorage();
         if (pendingProposal) {
-            // Guardar la propuesta pendiente en Supabase
             await saveProposalToSupabase(pendingProposal, false);
             clearProposalFromLocalStorage();
             console.log('✅ Propuesta pendiente guardada en Supabase');
         }
         
-        // Verificar si hay un parámetro de redirección
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectPath = urlParams.get('redirect');
-        
-        if (redirectPath) {
-            // Limpiar el parámetro de la URL y redirigir
-            const cleanUrl = window.location.origin + window.location.pathname;
-            history.replaceState(null, '', cleanUrl);
-            window.location.href = cleanUrl + redirectPath;
-            return;
-        }
-        
-        // Cargar la propuesta del usuario
+        // Cargar la propuesta del usuario SIEMPRE, antes de cualquier redirección
         currentProposal = await loadUserProposal();
         if (currentProposal) {
             applyProposalToUI(currentProposal);
@@ -318,6 +305,21 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         
         // Actualizar la interfaz
         updateAuthUI();
+
+        // Verificar si hay un parámetro de redirección y actuar en consecuencia
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectPath = urlParams.get('redirect');
+        
+        if (redirectPath) {
+            // Limpiar el parámetro de la URL y redirigir
+            const cleanUrl = window.location.origin + window.location.pathname;
+            history.replaceState(null, '', cleanUrl);
+            // Redirigir después de un pequeño delay para que la UI se actualice
+            setTimeout(() => {
+                window.location.href = cleanUrl + redirectPath;
+            }, 500);
+            return;
+        }
     } else if (event === 'SIGNED_OUT') {
         currentUser = null;
         currentProposal = null;
@@ -443,7 +445,7 @@ function applyProposalToUI(proposal) {
 function updateAuthUI() {
     const accessBtn = document.getElementById('access-draft-btn');
     const userInfo = document.getElementById('user-info');
-    const saveBtn = document.getElementById('save-map-btn');
+    const saveBtn = document.getElementById('save-map-btn'); // "Guardar borrador"
     const publishBtn = document.getElementById('publish-btn');
     const unpublishBtn = document.getElementById('unpublish-btn');
     
@@ -457,7 +459,7 @@ function updateAuthUI() {
                 ${currentProposal ? `<span class="user-proposal-title">${currentProposal.titulo}</span>` : ''}
             `;
         }
-        if (saveBtn) saveBtn.style.display = 'block';
+        if (saveBtn) saveBtn.style.display = 'block'; // "Guardar borrador" siempre visible
         if (publishBtn) publishBtn.style.display = 'block';
         if (unpublishBtn) {
             unpublishBtn.style.display = currentProposal && currentProposal.es_publica ? 'block' : 'none';
@@ -466,7 +468,7 @@ function updateAuthUI() {
         // Usuario no autenticado
         if (accessBtn) accessBtn.style.display = 'block';
         if (userInfo) userInfo.style.display = 'none';
-        if (saveBtn) saveBtn.style.display = 'none';
+        if (saveBtn) saveBtn.style.display = 'block';
         if (publishBtn) publishBtn.style.display = 'none';
         if (unpublishBtn) unpublishBtn.style.display = 'none';
     }
