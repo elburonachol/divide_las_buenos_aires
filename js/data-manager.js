@@ -17,7 +17,7 @@
  * Carga todos los departamentos y los prepara para su uso en la aplicación
  */
 function loadGeoJSON() {
-    return fetch('geometrias/deptos_pba.geojson')
+    return fetch('/geometrias/deptos_pba.geojson')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error al cargar el archivo GeoJSON');
@@ -66,7 +66,7 @@ function loadGeoJSON() {
  * Nota: Este archivo tiene la misma estructura de datos que deptos_pba.geojson
  */
 function loadComunasCABA() {
-    return fetch('geometrias/comunas_caba_c_datos.geojson')
+    return fetch('/geometrias/comunas_caba_c_datos.geojson')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error al cargar comunas: HTTP ${response.status}`);
@@ -101,7 +101,7 @@ function loadComunasCABA() {
  * Incluye superficie, población y otras variables para cálculos
  */
 function loadPartidosData() {
-    return fetch('tablas_de_atributos/datos_partidos.json')
+    return fetch('/tablas_de_atributos/datos_partidos.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -126,7 +126,7 @@ function loadPartidosData() {
  * Incluye secciones electorales, regiones sanitarias, regiones educativas y departamentos judiciales
  */
 function loadRegionesExistentes() {
-    return fetch('tablas_de_atributos/regiones_administrativas.json')
+    return fetch('/tablas_de_atributos/regiones_administrativas.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -152,7 +152,7 @@ function loadRegionesExistentes() {
 let datosComuna = null;
 
 function loadDatosComuna() {
-    return fetch('tablas_de_atributos/datos_comunas.json')
+    return fetch('/tablas_de_atributos/datos_comunas.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
