@@ -326,21 +326,115 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 });
 
 /**
- * APLICA UNA PROPUESTA A LA INTERFAZ DE USUARIO
- * @param {Object} proposal - Propuesta a aplicar
+ * APLICA UNA PROPUESTA GUARDADA A LA INTERFAZ DE USUARIO
+ * Toma los datos de la propuesta y actualiza el estado global y la UI.
+ * @param {Object} proposal - Objeto de la propuesta desde Supabase.
  */
 function applyProposalToUI(proposal) {
     if (!proposal) return;
-    
-    // TODO: Implementar la aplicación completa de la propuesta
-    // Por ahora solo mostramos un log
+
     console.log('📋 Aplicando propuesta:', proposal.titulo);
+
+    // 1. Actualizar el título de la propuesta en la UI
+    const userInfo = document.getElementById('user-info');
+    if (userInfo) {
+        const titleSpan = userInfo.querySelector('.user-proposal-title');
+        if (titleSpan) titleSpan.textContent = proposal.titulo;
+    }
+
+    // 2. Actualizar el estado global
+    currentDivisionCount = proposal.cantidad_divisiones || 3;
+    comunasIncluidas = proposal.incluye_comunas_caba || false;
     
-    // Actualizar título si existe
-    // Actualizar número de divisiones
-    // Actualizar nombres de divisiones
-    // Actualizar departamentos por división
-    // etc.
+    // 3. Reconstruir las cajas de división
+    //    initializeDivisionBoxes limpiará el contenedor y creará las cajas.
+    initializeDivisionBoxes(currentDivisionCount);
+
+    // 4. Asignar nombres y departamentos a cada división
+    if (proposal.nombres_divisiones && Array.isArray(proposal.nombres_divisiones)) {
+        proposal.nombres_divisiones.forEach((nombre, index) => {
+            const groupId = index + 1;
+            if (departmentGroups[groupId]) {
+                departmentGroups[groupId].name = nombre;
+                // Actualizar el input/editable en la UI
+                const editableName = document.querySelector(`[data-group-id="${groupId}"] .editable-division-name`);
+                if (editableName) editableName.textContent = nombre;
+            }
+        });
+    }
+
+    // 5. Asignar los departamentos a sus divisiones correspondientes
+    if (proposal.departamentos_por_division) {
+        Object.keys(proposal.departamentos_por_division).forEach(groupId => {
+            const deptNames = proposal.departamentos_por_division[groupId];
+            if (departmentGroups[groupId] && Array.isArray(deptNames)) {
+                const divisionList = document.getElementById(`division-${groupId}`);
+                if (divisionList) {
+                    divisionList.innerHTML = ''; // Limpiar por si acaso
+                    deptNames.forEach(deptName => {
+                        const dept = allDepartments.find(d => d.properties.nam === deptName);
+                        if (dept) {
+                            const isGBA = gbaCodes.includes(dept.properties.cde);
+                            const item = document.createElement('div');
+                            item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
+                            item.textContent = deptName;
+                            item.setAttribute('data-dept-name', deptName);
+                            item.setAttribute('data-dept-code', dept.properties.cde);
+                            divisionList.appendChild(item);
+                        }
+                    });
+                    // Ordenar alfabéticamente dentro de la división
+                    sortDivisionList(groupId);
+                }
+            }
+        });
+    }
+
+    // 6. Reconstruir el listado principal con los departamentos no asignados
+    const listContainer = document.getElementById('all-departments-list');
+    if (listContainer) {
+        listContainer.innerHTML = '';
+        // Recopilar todos los departamentos asignados
+        const assignedDepts = new Set();
+        Object.values(proposal.departamentos_por_division || {}).forEach(depts => {
+            depts.forEach(name => assignedDepts.add(name));
+        });
+
+        // Poblar el listado con los que no están asignados
+        allDepartments.forEach(feature => {
+            const name = feature.properties.nam;
+            if (!assignedDepts.has(name)) {
+                const isGBA = gbaCodes.includes(feature.properties.cde);
+                const item = document.createElement('div');
+                item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
+                item.textContent = name;
+                item.setAttribute('data-dept-name', name);
+                item.setAttribute('data-dept-code', feature.properties.cde);
+                listContainer.appendChild(item);
+            }
+        });
+        sortMainList();
+    }
+
+    // 7. Sincronizar el input de número de divisiones y otros controles
+    const divisionInput = document.getElementById('division-count');
+    if (divisionInput) divisionInput.value = currentDivisionCount;
+
+    const comunasCheckbox = document.getElementById('toggle-comunas');
+    if (comunasCheckbox) {
+        comunasCheckbox.checked = comunasIncluidas;
+        // Disparar el evento 'change' para que se ejecute la lógica de mostrar/ocultar comunas
+        if (comunasIncluidas) {
+            // Simular un cambio solo si es necesario, para no recargar innecesariamente
+            // showComunas() se llamará desde el evento change si es necesario
+        }
+    }
+    
+    // 8. Notificar a todos los módulos que el estado ha cambiado
+    notifyStateChange();
+    updateDivisionsTitle();
+    
+    console.log('✅ Propuesta aplicada a la interfaz.');
 }
 
 /**
@@ -883,24 +977,30 @@ window.supabaseClient = supabaseClient;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 
-// Configurar botones
+// Configurar botones de autenticación y guardado
 document.addEventListener('DOMContentLoaded', function() {
-    const saveBtn = document.getElementById('save-map-btn');
-    const publishBtn = document.getElementById('publish-btn');
-    const unpublishBtn = document.getElementById('unpublish-btn');
-    const accessBtn = document.getElementById('access-draft-btn');
-    
-    if (saveBtn) {
-        saveBtn.addEventListener('click', showSaveDraftModal);
+    // Botón para guardar borrador (visible para todos)
+    const saveDraftBtn = document.getElementById('save-map-btn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', showSaveDraftModal);
     }
+    
+    // Botón para publicar (solo visible si está autenticado)
+    const publishBtn = document.getElementById('publish-btn');
     if (publishBtn) {
         publishBtn.addEventListener('click', showPublishModal);
     }
+    
+    // Botón para ocultar propuesta pública
+    const unpublishBtn = document.getElementById('unpublish-btn');
     if (unpublishBtn) {
         unpublishBtn.addEventListener('click', showUnpublishModal);
     }
-    if (accessBtn) {
-        accessBtn.addEventListener('click', showAccessDraftModal);
+    
+    // Botón para acceder a propuesta borrador (visible si no está autenticado)
+    const accessDraftBtn = document.getElementById('access-draft-btn');
+    if (accessDraftBtn) {
+        accessDraftBtn.addEventListener('click', showAccessDraftModal);
     }
 });
 
