@@ -335,6 +335,14 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 function applyProposalToUI(proposal) {
     if (!proposal) return;
 
+    // Si los datos base aún no están cargados, encolar la propuesta
+    // y dejar que main.js la aplique cuando termine de cargar todo
+    if (!allDepartments || allDepartments.length === 0) {
+        console.log('⏳ Datos aún no cargados. Encolando propuesta para aplicar después.');
+        window.__pendingProposal = proposal;
+        return;
+    }
+
     console.log('📋 Aplicando propuesta:', proposal.titulo);
 
     // 1. Actualizar el título de la propuesta en la UI
