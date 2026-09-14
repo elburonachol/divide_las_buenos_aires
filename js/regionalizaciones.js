@@ -227,7 +227,7 @@ function toggleRegionalizacion(tipo, activar) {
 function loadRegionalizacionLayer(tipo) {
     const archivo = getRegionalizacionFileName(tipo);
     
-    fetch(`geometrias/${archivo}`)
+    fetch(`/geometrias/${archivo}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error al cargar ${archivo}`);
