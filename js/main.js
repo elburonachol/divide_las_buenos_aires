@@ -95,6 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // 3. Inicializamos la interfaz de usuario
         initializeUI();
         
+        // 4. Aplicar propuesta pendiente (si el usuario se autenticó antes de cargar los datos)
+        if (window.__pendingProposal && typeof applyProposalToUI === 'function') {
+            applyProposalToUI(window.__pendingProposal);
+            window.__pendingProposal = null;
+        }
+        
+        // 5. Verificar si la URL corresponde a una propuesta pública
+        checkPublicProposalRoute();
+        
     }).catch(error => {
         console.error('❌ Error en la inicialización:', error);
         
@@ -240,33 +249,27 @@ function isGBADepartment(departmentName) {
 
 /**
  * DETECTA SI LA URL CORRESPONDE A UNA PROPUESTA PÚBLICA
- * y carga los datos correspondientes
+ * y carga los datos correspondientes.
+ * IMPORTANTE: debe llamarse DESPUÉS de que los datos base estén cargados.
  */
 async function checkPublicProposalRoute() {
     const path = window.location.pathname;
     const match = path.match(/\/propuesta\/([a-z0-9]+)/);
     
-    if (match) {
-        const shareCode = match[1];
-        console.log('📋 Detectada ruta de propuesta pública:', shareCode);
-        
-        // Esperar a que los datos base y Supabase estén listos
-        // Usamos un pequeño delay para asegurarnos de que todo esté inicializado
-        setTimeout(async () => {
-            if (typeof loadPublicProposal === 'function' && typeof applyProposalToUI === 'function') {
-                const proposal = await loadPublicProposal(shareCode);
-                if (proposal) {
-                    applyProposalToUI(proposal);
-                }
-            }
-        }, 1500); // Aumentamos un poco el delay para dar tiempo a la carga
+    if (!match) return;
+    
+    const shareCode = match[1];
+    console.log('📋 Detectada ruta de propuesta pública:', shareCode);
+    
+    if (typeof loadPublicProposal !== 'function' || typeof applyProposalToUI !== 'function') {
+        console.warn('⚠️ Módulos de propuesta no disponibles todavía');
+        return;
+    }
+    
+    const proposal = await loadPublicProposal(shareCode);
+    if (proposal) {
+        applyProposalToUI(proposal);
+    } else {
+        console.warn('⚠️ No se encontró propuesta pública con código:', shareCode);
     }
 }
-
-// Ejecutar al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    // ... código existente ...
-    
-    // Al final, verificar ruta de propuesta
-    checkPublicProposalRoute();
-});
