@@ -663,6 +663,7 @@ function showDepartmentPopup(feature, layer, latlng) {
     // Obtener datos del departamento/comuna
     const poblacion = obtenerDatoPorCodigo(codigo, 'poblacion_total');
     const superficie = obtenerDatoPorCodigo(codigo, 'superficie');
+    const pbg = obtenerDatoPorCodigo(codigo, 'pbg');
     const densidad = (poblacion && superficie && superficie > 0) 
         ? poblacion / superficie 
         : null;
@@ -671,6 +672,7 @@ function showDepartmentPopup(feature, layer, latlng) {
     const poblacionStr = poblacion ? formatearNumero(poblacion) : 'Sin datos';
     const superficieStr = superficie ? formatearNumero(superficie, 1) + ' km²' : 'Sin datos';
     const densidadStr = densidad ? formatearNumero(densidad, 2) + ' hab/km²' : 'Sin datos';
+    const pbgStr = pbg ? formatearMoneda(pbg) : 'Sin datos';
     
     const popupContent = `
         <div class="department-popup">
@@ -686,6 +688,10 @@ function showDepartmentPopup(feature, layer, latlng) {
             <div class="popup-row">
                 <span class="popup-label">Densidad:</span>
                 <span class="popup-value">${densidadStr}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">PBG:</span>
+                <span class="popup-value">${pbgStr}</span>
             </div>
         </div>
     `;
