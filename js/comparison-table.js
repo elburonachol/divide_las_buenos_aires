@@ -119,6 +119,20 @@ function updateComparisonTable() {
         }
         tbody.appendChild(filaDensidad);
         
+        // ----- Producto Bruto Geográfico (PBG) -----
+        const filaPBG = document.createElement('tr');
+        const celdaVariablePBG = document.createElement('td');
+        celdaVariablePBG.innerHTML = '<a href="#datos-pbg" class="variable-link" data-tab="datos">Producto Bruto Geográfico</a>';
+        filaPBG.appendChild(celdaVariablePBG);
+        
+        for (let i = 1; i <= currentDivisionCount; i++) {
+            const pbgCell = document.createElement('td');
+            const pbg = calcularTotalDivision(i, 'pbg');
+            pbgCell.textContent = formatearMoneda(pbg);
+            filaPBG.appendChild(pbgCell);
+        }
+        tbody.appendChild(filaPBG);
+        
     } else {
         // Mensaje mientras se cargan los datos
         const filaMensaje = document.createElement('tr');
