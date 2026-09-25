@@ -181,52 +181,57 @@
             <div class="info-section">
                 <h2>Sobre los datos</h2>
                 
-                <h3 id="datos-poblacion">Población</h3>
+                <h3 id="datos-poblacion-superficie">Población y Superficie</h3>
                 <p>
-                    Los datos de población corresponden a las <strong>proyecciones al año 2020</strong> elaboradas por el 
-                    <strong>Instituto Nacional de Estadística y Censos (INDEC)</strong> de la República Argentina. 
-                    Se trata de valores proyectados a partir del Censo Nacional de Población, Hogares y Viviendas 2010, 
-                    y representan la mejor estimación disponible para cada departamento/partido de la Provincia de Buenos Aires 
-                    y cada comuna de la Ciudad Autónoma de Buenos Aires.
+                    Los datos de población y superficie provienen de los <strong>resultados definitivos del Censo Nacional de Población, Hogares y Viviendas 2022</strong>, elaborados por el <strong>Instituto Nacional de Estadística y Censos (INDEC)</strong> de la República Argentina. Los valores de superficie en km² para los partidos de la Provincia de Buenos Aires y las comunas de la Ciudad Autónoma de Buenos Aires corresponden a los registrados en el documento "Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina" del Instituto Geográfico Nacional (IGN).
                 </p>
                 <p>
-                    <strong>Fuente:</strong> INDEC, Proyecciones de población 2020.<br>
-                    <strong>Descarga:</strong> <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-2-24-84" target="_blank" rel="noopener">INDEC - Proyecciones de población</a>
-                </p>
-                
-                <h3 id="datos-superficie">Superficie</h3>
-                <p>
-                    Los datos de superficie provienen del <strong>Instituto Geográfico Nacional (IGN)</strong>, 
-                    específicamente de la <em>Determinación de la superficie correspondiente al Territorio Continental, 
-                    Antártico e Insular de la República Argentina</em>. Se utilizan las tablas 12, 13 y 17 que contienen 
-                    los valores de superficie para provincias, partidos de la Provincia de Buenos Aires y comunas de la CABA respectivamente.
-                </p>
-                <p>
-                    <strong>Fuente:</strong> IGN, Tablas 12, 13 y 17.<br>
-                    <strong>Descarga:</strong> <a href="https://www.ign.gob.ar/NuestrasActividades/Geografia/DatosArgentina" target="_blank" rel="noopener">IGN - Datos geográficos</a>
+                    <strong>Fuente:</strong> INDEC, Censo Nacional de Población, Hogares y Viviendas 2022. Resultados definitivos.<br>
+                    <strong>Descarga:</strong> 
+                    <a href="https://censo.gob.ar/index.php/datos_definitivos_caba/" target="_blank" rel="noopener">CABA</a> | 
+                    <a href="https://censo.gob.ar/index.php/datos_definitivos_bsas/" target="_blank" rel="noopener">Provincia de Buenos Aires</a>
                 </p>
                 
                 <h3 id="datos-densidad">Densidad de población</h3>
                 <p>
-                    La densidad de población se calcula como el cociente entre la población total proyectada al año 2020 
-                    y la superficie en kilómetros cuadrados de cada unidad administrativa. Se expresa en habitantes por km².
+                    La densidad de población se calcula como el cociente entre la población total y la superficie en kilómetros cuadrados de cada unidad administrativa. Se expresa en habitantes por km².
                 </p>
                 <p>
                     <strong>Fórmula:</strong> Densidad = Población total ÷ Superficie (km²)
                 </p>
                 
+                <h3 id="datos-pbg">Producto Bruto Geográfico (PBG)</h3>
+                <p>
+                    El Producto Bruto Geográfico es un indicador económico que mide el valor de todos los bienes y servicios finales producidos en un territorio durante un período determinado. Para este proyecto, se utilizan los valores de PBG por partido para la Provincia de Buenos Aires y por comuna para la Ciudad Autónoma de Buenos Aires.
+                </p>
+                <p>
+                    <strong>Fuente PBA:</strong> Dirección Provincial de Estadística de la Provincia de Buenos Aires. Producto Bruto Geográfico de la Provincia de Buenos Aires por partido.<br>
+                    <strong>Descarga:</strong> <a href="https://datos.estadistica.ec.gba.gov.ar/dataset/producto-bruto-geografico-de-la-provincia-de-buenos-aires-por-partido" target="_blank" rel="noopener">datos.estadistica.ec.gba.gov.ar</a>
+                </p>
+                <p>
+                    <strong>Fuente CABA:</strong> Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires. Producto Geográfico Bruto por comunas.<br>
+                    <strong>Descarga:</strong> <a href="https://www.estadisticaciudad.gob.ar/eyc/publicaciones/producto-geografico-por-comunas/" target="_blank" rel="noopener">estadisticaciudad.gob.ar</a>
+                </p>
+                
+                <h3 id="datos-regionalizaciones">Regionalizaciones existentes</h3>
+                <p>
+                    Los datos de las regionalizaciones existentes se utilizan para visualizar los límites administrativos preexistentes en el territorio y provienen de las siguientes fuentes oficiales:
+                </p>
+                <ul>
+                    <li><strong>Regiones Sanitarias:</strong> Ministerio de Salud de la Provincia de Buenos Aires. Fuente: <a href="https://catalogo.datos.gba.gob.ar/sk/dataset/defunciones-generales" target="_blank" rel="noopener">Catálogo de Datos Abiertos de la Provincia de Buenos Aires</a>.</li>
+                    <li><strong>Secciones Electorales:</strong> Ley Electoral de la Provincia de Buenos Aires N° 5109. Fuente: <a href="https://web.archive.org/web/20090617083015/http://www.eleccionesarg.com.ar/archivos/ley5109.pdf" target="_blank" rel="noopener">Archivo web de la Ley 5109</a>.</li>
+                    <li><strong>Regiones Educativas:</strong> Dirección General de Cultura y Educación de la Provincia de Buenos Aires. Fuente: <a href="https://mapaescolar.abc.gob.ar/mapaescolar" target="_blank" rel="noopener">Mapa Escolar</a>.</li>
+                    <li><strong>Departamentos Judiciales:</strong> Consejo de la Magistratura de la Provincia de Buenos Aires. Fuente: <a href="https://www.cmagistratura.gba.gov.ar/mapa-regiones" target="_blank" rel="noopener">Mapa de Regiones Judiciales</a>.</li>
+                </ul>
+                
                 <h3 id="datos-procesamiento">Procesamiento</h3>
                 <p>
-                    Los datos fueron procesados y consolidados en archivos JSON accesibles públicamente desde el repositorio 
-                    del proyecto en GitHub. Cada archivo contiene metadatos sobre la fuente, la fecha de actualización y las 
-                    variables disponibles, junto con los datos propiamente dichos identificados por el código CDE 
-                    (Código de Departamento) oficial.
+                    Los datos fueron procesados y consolidados en archivos JSON accesibles públicamente desde el repositorio del proyecto en GitHub. Cada archivo contiene metadatos sobre la fuente, la fecha de actualización y las variables disponibles, junto con los datos propiamente dichos identificados por el código CDE (Código de Departamento) oficial.
                 </p>
                 
                 <h3 id="datos-repositorio">Repositorio</h3>
                 <p>
-                    Todo el código fuente, los datos procesados y las geometrías utilizadas están disponibles en el repositorio 
-                    público del proyecto en GitHub:<br>
+                    Todo el código fuente, los datos procesados y las geometrías utilizadas están disponibles en el repositorio público del proyecto en GitHub:<br>
                     <a href="https://github.com/elburonachol/divide_las_buenos_aires" target="_blank" rel="noopener">https://github.com/elburonachol/divide_las_buenos_aires</a>
                 </p>
             </div>
