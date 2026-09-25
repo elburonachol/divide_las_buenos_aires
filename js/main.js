@@ -154,6 +154,11 @@ function initializeUI() {
     if (typeof updateAuthUI === 'function') {
     updateAuthUI();
     }
+
+    // Inicializar tabs (por si no se inicializaron antes)
+    if (typeof activateTab === 'function') {
+        // La inicialización ya ocurre en tabs-manager.js al DOMContentLoaded
+    }
     
     console.log('✅ Interfaz de usuario inicializada');
 }
