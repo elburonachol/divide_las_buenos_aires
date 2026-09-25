@@ -449,36 +449,13 @@ function applyProposalToUI(proposal) {
 
 /**
  * ACTUALIZA LA INTERFAZ SEGÚN EL ESTADO DE AUTENTICACIÓN
+ * Ahora delega el renderizado al dropdown, ya que los botones
+ * se movieron al menú desplegable de la esquina superior izquierda.
  */
 function updateAuthUI() {
-    const accessBtn = document.getElementById('access-draft-btn');
-    const userInfo = document.getElementById('user-info');
-    const saveBtn = document.getElementById('save-map-btn'); // "Guardar borrador"
-    const publishBtn = document.getElementById('publish-btn');
-    const unpublishBtn = document.getElementById('unpublish-btn');
-    
-    if (currentUser) {
-        // Usuario autenticado
-        if (accessBtn) accessBtn.style.display = 'none';
-        if (userInfo) {
-            userInfo.style.display = 'block';
-            userInfo.innerHTML = `
-                <span class="user-email">${currentUser.email}</span>
-                ${currentProposal ? `<span class="user-proposal-title">${currentProposal.titulo}</span>` : ''}
-            `;
-        }
-        if (saveBtn) saveBtn.style.display = 'block'; // "Guardar borrador" siempre visible
-        if (publishBtn) publishBtn.style.display = 'block';
-        if (unpublishBtn) {
-            unpublishBtn.style.display = currentProposal && currentProposal.es_publica ? 'block' : 'none';
-        }
-    } else {
-        // Usuario no autenticado
-        if (accessBtn) accessBtn.style.display = 'block';
-        if (userInfo) userInfo.style.display = 'none';
-        if (saveBtn) saveBtn.style.display = 'block';
-        if (publishBtn) publishBtn.style.display = 'none';
-        if (unpublishBtn) unpublishBtn.style.display = 'none';
+    // Renderizar el contenido del dropdown según estado
+    if (typeof renderDropdownContent === 'function') {
+        renderDropdownContent(currentUser, currentProposal);
     }
 }
 
@@ -987,31 +964,11 @@ window.supabaseClient = supabaseClient;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 
-// Configurar botones de autenticación y guardado
+// Configuración inicial del módulo
 document.addEventListener('DOMContentLoaded', function() {
-    // Botón para guardar borrador (visible para todos)
-    const saveDraftBtn = document.getElementById('save-map-btn');
-    if (saveDraftBtn) {
-        saveDraftBtn.addEventListener('click', showSaveDraftModal);
-    }
-    
-    // Botón para publicar (solo visible si está autenticado)
-    const publishBtn = document.getElementById('publish-btn');
-    if (publishBtn) {
-        publishBtn.addEventListener('click', showPublishModal);
-    }
-    
-    // Botón para ocultar propuesta pública
-    const unpublishBtn = document.getElementById('unpublish-btn');
-    if (unpublishBtn) {
-        unpublishBtn.addEventListener('click', showUnpublishModal);
-    }
-    
-    // Botón para acceder a propuesta borrador (visible si no está autenticado)
-    const accessDraftBtn = document.getElementById('access-draft-btn');
-    if (accessDraftBtn) {
-        accessDraftBtn.addEventListener('click', showAccessDraftModal);
+    // El dropdown maneja los botones, así que no hay que configurar botones aquí.
+    // Solo aseguramos que el estado inicial se renderice correctamente.
+    if (typeof updateAuthUI === 'function') {
+        setTimeout(() => updateAuthUI(), 100);
     }
 });
-
-console.log('✅ Módulo de autenticación y propuestas cargado');
