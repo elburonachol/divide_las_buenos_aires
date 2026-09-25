@@ -1,0 +1,243 @@
+/* =============================================
+   FOOTER Y MODALES FULL-SCREEN (FAQ, T&C)
+   ============================================= */
+
+.app-footer {
+    margin-top: 50px;
+    padding: 25px 20px;
+    background: #2c3e50;
+    color: #ecf0f1;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.footer-copyright {
+    font-size: 13px;
+    color: #bdc3c7;
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.footer-links a {
+    color: #ecf0f1;
+    text-decoration: none;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.footer-links a:hover {
+    border-bottom-color: #ecf0f1;
+}
+
+.footer-separator {
+    color: #7f8c8d;
+}
+
+/* =============================================
+   MODALES FULL-SCREEN (FAQ y T&C)
+   ============================================= */
+
+.full-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.full-modal.active {
+    display: flex;
+}
+
+.full-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 40px 50px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    position: relative;
+    animation: modalFadeIn 0.25s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.full-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.full-modal-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.full-modal-content h2 {
+    color: #2c3e50;
+    font-size: 1.7rem;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e1e8ed;
+}
+
+/* =============================================
+   FAQ
+   ============================================= */
+
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.faq-item {
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+
+.faq-item[open] {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.faq-item summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+    background: #f8f9fa;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: '+';
+    font-size: 20px;
+    color: #999;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.faq-item[open] summary::after {
+    content: '−';
+}
+
+.faq-item summary:hover {
+    background: #f0f6ff;
+}
+
+.faq-item p {
+    padding: 15px 20px;
+    margin: 0;
+    color: #495057;
+    line-height: 1.7;
+    font-size: 14px;
+    border-top: 1px solid #e1e8ed;
+}
+
+/* =============================================
+   TÉRMINOS Y CONDICIONES
+   ============================================= */
+
+.terms-content {
+    line-height: 1.75;
+    color: #495057;
+    font-size: 14px;
+}
+
+.terms-content h3 {
+    color: #2c3e50;
+    font-size: 1.05rem;
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.terms-content p {
+    margin-bottom: 12px;
+}
+
+.terms-content ul {
+    margin: 10px 0 15px 25px;
+}
+
+.terms-content ul li {
+    margin-bottom: 6px;
+}
+
+.terms-content a {
+    color: #3388ff;
+    text-decoration: underline;
+}
+
+.terms-footer {
+    margin-top: 30px !important;
+    padding-top: 20px;
+    border-top: 1px solid #e1e8ed;
+    font-style: italic;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .full-modal {
+        padding: 20px 10px;
+    }
+    
+    .full-modal-content {
+        padding: 30px 22px;
+    }
+    
+    .full-modal-content h2 {
+        font-size: 1.4rem;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}
