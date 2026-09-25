@@ -1,0 +1,129 @@
+/* =============================================
+   NAVEGACIÓN POR PESTAÑAS
+   ============================================= */
+
+.tabs-nav {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #e1e8ed;
+    margin-bottom: 25px;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: #3498db;
+}
+
+.tab-btn.active {
+    color: #2c3e50;
+    border-bottom-color: #3498db;
+}
+
+.tab-btn:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: -2px;
+    border-radius: 4px 4px 0 0;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Título clickeable */
+.clickable-title {
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+.clickable-title:hover {
+    color: #3498db;
+}
+
+/* Secciones informativas (tabs "Sobre los datos" y "Sobre el proyecto") */
+.info-section {
+    background: white;
+    border-radius: 10px;
+    padding: 35px 40px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+.info-section h2 {
+    color: #2c3e50;
+    font-size: 1.6rem;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e1e8ed;
+}
+
+.info-section h3 {
+    color: #34495e;
+    font-size: 1.15rem;
+    margin-top: 28px;
+    margin-bottom: 12px;
+}
+
+.info-section p {
+    margin-bottom: 15px;
+    color: #495057;
+    font-size: 15px;
+}
+
+.info-section ul {
+    margin: 12px 0 20px 25px;
+}
+
+.info-section ul li {
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+.info-section a {
+    color: #3388ff;
+    text-decoration: none;
+    border-bottom: 1px dotted #3388ff;
+}
+
+.info-section a:hover {
+    color: #1c5bbf;
+    border-bottom-style: solid;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .info-section {
+        padding: 25px 20px;
+    }
+}
