@@ -9,16 +9,20 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- CSS Modularizado (cargar en orden correcto) -->
-    <link rel="stylesheet" href="/css/base.css">                     <!-- Estilos base y reset -->
-    <link rel="stylesheet" href="/css/layout.css">                   <!-- Estructura de página -->
-    <link rel="stylesheet" href="/css/buttons-controls.css">         <!-- Botones principales -->
-    <link rel="stylesheet" href="/css/form-controls.css">            <!-- Controles de formulario -->
-    <link rel="stylesheet" href="/css/regionalizaciones-controls.css"><!-- Panel colapsable de regionalizaciones -->
-    <link rel="stylesheet" href="/css/drag-drop.css">                <!-- Drag & drop y listas -->
-    <link rel="stylesheet" href="/css/comparison.css">               <!-- Tabla comparativa -->
-    <link rel="stylesheet" href="/css/regionalizaciones.css">        <!-- Leyenda de regionalizaciones -->
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/tabs.css">
+    <link rel="stylesheet" href="/css/dropdown-menu.css">
+    <link rel="stylesheet" href="/css/buttons-controls.css">
+    <link rel="stylesheet" href="/css/form-controls.css">
+    <link rel="stylesheet" href="/css/regionalizaciones-controls.css">
+    <link rel="stylesheet" href="/css/drag-drop.css">
+    <link rel="stylesheet" href="/css/comparison.css">
+    <link rel="stylesheet" href="/css/regionalizaciones.css">
+    <link rel="stylesheet" href="/css/map-popup.css">
+    <link rel="stylesheet" href="/css/footer.css">
     
-    <!-- SortableJS para drag & drop -->
+    <!-- SortableJS -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
@@ -29,173 +33,419 @@
         <p class="loader-message">Cargando datos...</p>
     </div>
 
-<div id="auth-top-bar" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 15px;">
-    <button id="access-draft-btn" class="access-draft-button">Acceder a mi propuesta borrador</button>
-    <div id="user-info" style="display: none; text-align: right; font-size: 13px;">
-        <div class="user-email"></div>
-        <div class="user-proposal-title" style="font-weight: bold; color: #27ae60;"></div>
-    </div>
-</div>
+    <!-- ============================================
+         HEADER: Dropdown de propuesta del usuario
+         ============================================ -->
+    <header class="app-header">
+        <div class="dropdown-menu" id="proposal-dropdown">
+            <button class="dropdown-trigger" id="dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+                <span class="dropdown-trigger-icon">📁</span>
+                <span class="dropdown-trigger-text">Mi propuesta de división</span>
+                <span class="dropdown-trigger-arrow">▾</span>
+            </button>
+            <div class="dropdown-content" id="dropdown-content" role="menu">
+                <!-- Contenido dinámico según estado de autenticación -->
+            </div>
+        </div>
+    </header>
     
     <div class="container">
-        <h1>Divide (las) Buenos Aires</h1>
+        <!-- Título clickeable que vuelve al tab principal -->
+        <h1 id="app-title" class="clickable-title">Divide (las) Buenos Aires</h1>
         
-        <!-- Controles principales -->
-        <div class="controls">
-            <div class="controls-top-row">
-                <button id="reset-btn" class="reset-button">Reestablecer valores</button>
-                <div class="division-control">
-                    <label for="division-count">Número de divisiones:</label>
-                    <div class="division-count-wrapper">
-                        <input type="text" id="division-count" value="3" class="division-count-input" inputmode="numeric" maxlength="2">
-                        <button type="button" id="division-decrease" class="division-count-btn" aria-label="Disminuir divisiones">−</button>
-                        <button type="button" id="division-increase" class="division-count-btn" aria-label="Aumentar divisiones">+</button>
+        <!-- ============================================
+             NAVEGACIÓN POR PESTAÑAS
+             ============================================ -->
+        <nav class="tabs-nav" role="tablist">
+            <button class="tab-btn active" data-tab="propuestas" role="tab" aria-selected="true">Propuestas de división</button>
+            <button class="tab-btn" data-tab="datos" role="tab" aria-selected="false">Sobre los datos</button>
+            <button class="tab-btn" data-tab="proyecto" role="tab" aria-selected="false">Sobre el proyecto</button>
+        </nav>
+        
+        <!-- ============================================
+             TAB 1: PROPUESTAS DE DIVISIÓN (contenido actual)
+             ============================================ -->
+        <section class="tab-content active" id="tab-propuestas" role="tabpanel">
+            
+            <!-- Controles principales -->
+            <div class="controls">
+                <div class="controls-top-row">
+                    <button id="reset-btn" class="reset-button">Reestablecer valores</button>
+                    <div class="division-control">
+                        <label for="division-count">Número de divisiones:</label>
+                        <div class="division-count-wrapper">
+                            <input type="text" id="division-count" value="3" class="division-count-input" inputmode="numeric" maxlength="2">
+                            <button type="button" id="division-decrease" class="division-count-btn" aria-label="Disminuir divisiones">−</button>
+                            <button type="button" id="division-increase" class="division-count-btn" aria-label="Aumentar divisiones">+</button>
+                        </div>
                     </div>
+                    <button id="polygon-btn" class="polygon-button">Armar polígono de selección</button>
                 </div>
-                <button id="polygon-btn" class="polygon-button">Armar polígono de selección</button>
-                <button id="save-map-btn" class="save-draft-button">Guardar borrador</button>
-                <button id="publish-btn" class="save-button" style="display: none;">Guardar y compartir propuesta</button>
-                <button id="unpublish-btn" class="unpublish-button" style="display: none;">Ocultar propuesta pública</button>
-            </div>
-            
-            <!-- Control: Regionalizaciones ya existentes -->
-            <div class="region-control">
-                <label for="existing-regions">Regionalizaciones ya existentes:</label>
-                <select id="existing-regions">
-                    <option value="">-- Seleccione una región --</option>
-                    <option value="secciones_electorales">Secciones electorales</option>
-                    <option value="regiones_sanitarias">Regiones sanitarias</option>
-                    <option value="regiones_educativas">Regiones educativas</option>
-                    <option value="deptos_judiciales">Departamentos judiciales</option>
-                </select>
-            </div>
-            
-            <!-- Control: Comunas de CABA -->
-            <div class="region-control">
-                <label for="toggle-comunas">
-                    <input type="checkbox" id="toggle-comunas">
-                    Incluir comunas de CABA
-                </label>
-            </div>
-            
-            <!-- Controles de Regionalizaciones (Colapsable) -->
-            <div class="regionalizaciones-collapsible">
-                <div class="collapsible-header" id="regionalizaciones-toggle">
-                    <span>Límites de Regionalizaciones Existentes</span>
-                    <span class="toggle-icon">+</span>
+                
+                <!-- Control: Regionalizaciones ya existentes -->
+                <div class="region-control">
+                    <label for="existing-regions">Regionalizaciones ya existentes:</label>
+                    <select id="existing-regions">
+                        <option value="">-- Seleccione una región --</option>
+                        <option value="secciones_electorales">Secciones electorales</option>
+                        <option value="regiones_sanitarias">Regiones sanitarias</option>
+                        <option value="regiones_educativas">Regiones educativas</option>
+                        <option value="deptos_judiciales">Departamentos judiciales</option>
+                    </select>
                 </div>
-                <div class="collapsible-content" id="regionalizaciones-content" style="display: none;">
-                    <div class="regionalizaciones-inner">
-                        <div class="checkboxes-and-opacity">
-                            <div class="checkboxes">
-                                <label>
-                                    <input type="checkbox" id="toggle-sanitarias">
-                                    Regiones Sanitarias
-                                </label>
-                                <label>
-                                    <input type="checkbox" id="toggle-electorales">
-                                    Secciones Electorales
-                                </label>
-                                <label>
-                                    <input type="checkbox" id="toggle-judiciales">
-                                    Departamentos Judiciales
-                                </label>
-                                <label>
-                                    <input type="checkbox" id="toggle-educativas">
-                                    Regiones Educativas
-                                </label>
-                            </div>
-                            
-                            <div class="opacity-control">
-                                <label for="regionalizaciones-opacity">
-                                    Opacidad: <span id="opacity-value">70</span>%
-                                </label>
-                                <input type="range" id="regionalizaciones-opacity" min="10" max="90" value="70">
+                
+                <!-- Control: Comunas de CABA -->
+                <div class="region-control">
+                    <label for="toggle-comunas">
+                        <input type="checkbox" id="toggle-comunas">
+                        Incluir comunas de CABA
+                    </label>
+                </div>
+                
+                <!-- Controles de Regionalizaciones (Colapsable) -->
+                <div class="regionalizaciones-collapsible">
+                    <div class="collapsible-header" id="regionalizaciones-toggle">
+                        <span>Límites de Regionalizaciones Existentes</span>
+                        <span class="toggle-icon">+</span>
+                    </div>
+                    <div class="collapsible-content" id="regionalizaciones-content" style="display: none;">
+                        <div class="regionalizaciones-inner">
+                            <div class="checkboxes-and-opacity">
+                                <div class="checkboxes">
+                                    <label><input type="checkbox" id="toggle-sanitarias"> Regiones Sanitarias</label>
+                                    <label><input type="checkbox" id="toggle-electorales"> Secciones Electorales</label>
+                                    <label><input type="checkbox" id="toggle-judiciales"> Departamentos Judiciales</label>
+                                    <label><input type="checkbox" id="toggle-educativas"> Regiones Educativas</label>
+                                </div>
+                                <div class="opacity-control">
+                                    <label for="regionalizaciones-opacity">Transparencia: <span id="opacity-value">10</span>%</label>
+                                    <input type="range" id="regionalizaciones-opacity" min="0" max="90" value="10">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Leyenda Flotante -->
-        <div id="regionalizaciones-legend" class="regionalizaciones-legend">
-            <div class="legend-header">
-                <span>Leyenda de Regionalizaciones</span>
-                <span class="toggle-icon">−</span>
-            </div>
-            <div class="legend-content">
-                <!-- Los elementos de leyenda se insertarán aquí dinámicamente -->
-            </div>
-        </div>
-        
-        <!-- Información del modo polígono -->
-        <div id="polygon-info" class="polygon-info" style="display: none;">
-            <p><strong>Modo polígono activo:</strong> Haz clic izquierdo para agregar puntos. Haz clic derecho para finalizar.</p>
-        </div>
-        
-        <!-- Distribución en tres columnas -->
-        <div class="main-content">
-            <!-- Columna 1: Mapa -->
-            <div id="map-container">
-                <div id="map"></div>
+            <!-- Leyenda Flotante -->
+            <div id="regionalizaciones-legend" class="regionalizaciones-legend">
+                <div class="legend-header">
+                    <span>Leyenda de Regionalizaciones</span>
+                    <span class="toggle-icon">−</span>
+                </div>
+                <div class="legend-content"></div>
             </div>
             
-            <!-- Columna 2: Divisiones de Buenos Aires -->
-            <div class="divisions-column">
-                <h3 id="divisions-title">Divisiones de Buenos Aires</h3>
-                <div id="division-boxes-container" class="groups-container">
-                    <!-- Las cajas de división se generan aquí mediante JavaScript -->
+            <!-- Información del modo polígono -->
+            <div id="polygon-info" class="polygon-info" style="display: none;">
+                <p><strong>Modo polígono activo:</strong> Haz clic izquierdo para agregar puntos. Haz clic derecho para finalizar.</p>
+            </div>
+            
+            <!-- Distribución en tres columnas -->
+            <div class="main-content">
+                <div id="map-container">
+                    <div id="map"></div>
+                </div>
+                
+                <div class="divisions-column">
+                    <h3 id="divisions-title">Divisiones de Buenos Aires</h3>
+                    <div id="division-boxes-container" class="groups-container"></div>
+                </div>
+                
+                <div class="list-column">
+                    <h3>Listado de Departamentos 
+                        <span class="count-info">(<span id="dept-remaining-count">0</span> de <span id="dept-total-count">135</span>)</span>
+                    </h3>
+                    <div id="all-departments-list" class="departments-list"></div>
                 </div>
             </div>
             
-            <!-- Columna 3: Listado de departamentos -->
-            <div class="list-column">
-                <h3>Listado de Departamentos 
-                    <span class="count-info">(<span id="dept-remaining-count">0</span> de <span id="dept-total-count">135</span>)</span>
-                </h3>
-                <div id="all-departments-list" class="departments-list"></div>
+            <!-- Tabla comparativa -->
+            <div class="comparison-section">
+                <h3>Comparación entre Divisiones</h3>
+                <div class="table-container">
+                    <table id="comparison-table">
+                        <thead>
+                            <tr><th>Variable</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ============================================
+             TAB 2: SOBRE LOS DATOS
+             ============================================ -->
+        <section class="tab-content" id="tab-datos" role="tabpanel">
+            <div class="info-section">
+                <h2>Sobre los datos</h2>
+                
+                <h3 id="datos-poblacion">Población</h3>
+                <p>
+                    Los datos de población corresponden a las <strong>proyecciones al año 2020</strong> elaboradas por el 
+                    <strong>Instituto Nacional de Estadística y Censos (INDEC)</strong> de la República Argentina. 
+                    Se trata de valores proyectados a partir del Censo Nacional de Población, Hogares y Viviendas 2010, 
+                    y representan la mejor estimación disponible para cada departamento/partido de la Provincia de Buenos Aires 
+                    y cada comuna de la Ciudad Autónoma de Buenos Aires.
+                </p>
+                <p>
+                    <strong>Fuente:</strong> INDEC, Proyecciones de población 2020.<br>
+                    <strong>Descarga:</strong> <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-2-24-84" target="_blank" rel="noopener">INDEC - Proyecciones de población</a>
+                </p>
+                
+                <h3 id="datos-superficie">Superficie</h3>
+                <p>
+                    Los datos de superficie provienen del <strong>Instituto Geográfico Nacional (IGN)</strong>, 
+                    específicamente de la <em>Determinación de la superficie correspondiente al Territorio Continental, 
+                    Antártico e Insular de la República Argentina</em>. Se utilizan las tablas 12, 13 y 17 que contienen 
+                    los valores de superficie para provincias, partidos de la Provincia de Buenos Aires y comunas de la CABA respectivamente.
+                </p>
+                <p>
+                    <strong>Fuente:</strong> IGN, Tablas 12, 13 y 17.<br>
+                    <strong>Descarga:</strong> <a href="https://www.ign.gob.ar/NuestrasActividades/Geografia/DatosArgentina" target="_blank" rel="noopener">IGN - Datos geográficos</a>
+                </p>
+                
+                <h3 id="datos-densidad">Densidad de población</h3>
+                <p>
+                    La densidad de población se calcula como el cociente entre la población total proyectada al año 2020 
+                    y la superficie en kilómetros cuadrados de cada unidad administrativa. Se expresa en habitantes por km².
+                </p>
+                <p>
+                    <strong>Fórmula:</strong> Densidad = Población total ÷ Superficie (km²)
+                </p>
+                
+                <h3 id="datos-procesamiento">Procesamiento</h3>
+                <p>
+                    Los datos fueron procesados y consolidados en archivos JSON accesibles públicamente desde el repositorio 
+                    del proyecto en GitHub. Cada archivo contiene metadatos sobre la fuente, la fecha de actualización y las 
+                    variables disponibles, junto con los datos propiamente dichos identificados por el código CDE 
+                    (Código de Departamento) oficial.
+                </p>
+                
+                <h3 id="datos-repositorio">Repositorio</h3>
+                <p>
+                    Todo el código fuente, los datos procesados y las geometrías utilizadas están disponibles en el repositorio 
+                    público del proyecto en GitHub:<br>
+                    <a href="https://github.com/" target="_blank" rel="noopener">github.com/tu-usuario/divide-las-buenos-aires</a>
+                </p>
+            </div>
+        </section>
+        
+        <!-- ============================================
+             TAB 3: SOBRE EL PROYECTO
+             ============================================ -->
+        <section class="tab-content" id="tab-proyecto" role="tabpanel">
+            <div class="info-section">
+                <h2>Sobre el proyecto</h2>
+                
+                <h3>¿Qué es "Divide (las) Buenos Aires"?</h3>
+                <p>
+                    "Divide (las) Buenos Aires" es una herramienta interactiva para explorar y proponer distintas formas de 
+                    dividir políticamente el territorio de la Provincia de Buenos Aires y/o la Ciudad Autónoma de Buenos Aires. 
+                    A partir de los límites departamentales existentes (partidos en PBA y comunas en CABA), los usuarios pueden 
+                    agrupar estas unidades en divisiones personalizadas y evaluar cómo se comportan distintas variables 
+                    (población, superficie, densidad) en cada propuesta.
+                </p>
+                
+                <h3>¿Para qué se puede usar?</h3>
+                <ul>
+                    <li><strong>Investigación politológica:</strong> explorar escenarios hipotéticos de división territorial.</li>
+                    <li><strong>Docencia:</strong> ilustrar conceptos de geografía política, federalismo y organización territorial.</li>
+                    <li><strong>Análisis de políticas públicas:</strong> evaluar el impacto demográfico y geográfico de distintas 
+                        regionalizaciones.</li>
+                    <li><strong>Divulgación:</strong> compartir propuestas con otros usuarios a través de URLs públicas.</li>
+                </ul>
+                
+                <h3>¿Quién lo creó?</h3>
+                <p>
+                    Este proyecto fue creado y es mantenido por <strong>Ignacio Luis Bastias</strong>, técnico en Sistemas de 
+                    Información Geográfica, como un proyecto de hobby orientado a la comunidad politológica argentina.
+                </p>
+                
+                <h3>¿Cómo puedo hacer sugerencias?</h3>
+                <p>
+                    Podés reportar errores, sugerir mejoras o proponer nuevas funcionalidades a través del repositorio en GitHub. 
+                    Cualquier persona puede abrir un <em>issue</em> o enviar un <em>pull request</em> con mejoras al código o a los datos.
+                </p>
+                
+                <h3>Sobre los ingresos y aportes</h3>
+                <p>
+                    Este sitio <strong>no obtiene ingresos por publicidad</strong>. No hay anuncios ni se vende información a terceros.
+                    El proyecto se mantiene de forma independiente y autofinanciada.
+                </p>
+                <p>
+                    Si querés colaborar financieramente con el mantenimiento del proyecto (costos de hosting, dominio, etc.), 
+                    podés hacerlo a través de <a href="https://cafecito.app/" target="_blank" rel="noopener">Cafecito</a>. 
+                    <strong>Cualquier aporte es voluntario y no genera ningún compromiso por parte de los mantenedores del proyecto</strong>, 
+                    excepto que exista una declaración explícita en contrario.
+                </p>
+                
+                <h3>Licencia y uso</h3>
+                <p>
+                    El código fuente está disponible bajo licencia de código abierto. Los datos provienen de fuentes públicas y 
+                    oficiales. Se permite el uso educativo y de investigación. Los usos comerciales no están autorizados sin 
+                    permiso explícito.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <!-- ============================================
+         FOOTER con enlaces a FAQ y T&C
+         ============================================ -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <span class="footer-copyright">© 2025 Divide (las) Buenos Aires</span>
+            <nav class="footer-links">
+                <a href="#faq" id="faq-link">Preguntas frecuentes</a>
+                <span class="footer-separator">·</span>
+                <a href="#terminos" id="terms-link">Términos y condiciones</a>
+            </nav>
+        </div>
+    </footer>
+    
+    <!-- ============================================
+         MODAL: PREGUNTAS FRECUENTES
+         ============================================ -->
+    <div class="full-modal" id="faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-modal-title">
+        <div class="full-modal-content">
+            <button class="full-modal-close" id="faq-modal-close" aria-label="Cerrar">×</button>
+            <h2 id="faq-modal-title">Preguntas frecuentes</h2>
+            
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>¿Necesito registrarme para usar la web?</summary>
+                    <p>No. Podés armar propuestas sin registrarte. Solo necesitás un correo electrónico si querés guardar tu propuesta y acceder a ella más tarde desde cualquier dispositivo.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Cuántas propuestas puedo guardar?</summary>
+                    <p>Cada usuario (identificado por su correo electrónico) puede tener <strong>una única propuesta</strong> almacenada. Si guardás una nueva, se sobrescribe la anterior. Si querés conservar varias versiones, podés publicar una y descargar/capturar los datos antes de modificarla.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Otros usuarios pueden ver mi propuesta?</summary>
+                    <p>Solo si vos decidís publicarla usando el botón "Guardar y compartir propuesta". Mientras esté como borrador, solo vos podés verla al iniciar sesión.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Qué pasa si otro usuario usa mi propuesta como base?</summary>
+                    <p>Al publicar tu propuesta, aceptás que otros usuarios la usen como base para armar sus propias propuestas, sin necesidad de mencionarte explícitamente. Esto es parte de la naturaleza colaborativa del proyecto.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Los datos son oficiales?</summary>
+                    <p>Los datos provienen de fuentes públicas y oficiales (INDEC e IGN), pero pueden contener errores de procesamiento. El sitio no se hace responsable por inexactitudes. Siempre recomendamos verificar los datos con las fuentes originales antes de usarlos con fines académicos o profesionales.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Puedo usar la web con fines comerciales?</summary>
+                    <p>No sin autorización explícita. El sitio está pensado para uso educativo, de investigación y divulgación. Para usos comerciales, contactá al mantenedor del proyecto.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Cómo puedo aportar al proyecto?</summary>
+                    <p>Podés hacerlo de varias formas: reportando errores o sugiriendo mejoras en el repositorio de GitHub, aportando datos faltantes, o colaborando financieramente a través de <a href="https://cafecito.app/" target="_blank" rel="noopener">Cafecito</a>.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Qué datos míos almacenan?</summary>
+                    <p>Solo tu correo electrónico (para identificarte), el título de tu propuesta, las divisiones y departamentos que asignaste, y metadatos del sistema (fecha de creación, última actualización). No almacenamos tu IP, ni datos de navegación, ni información sensible.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿Puedo eliminar mi propuesta?</summary>
+                    <p>Sí. Podés ocultar tu propuesta pública usando el botón "Ocultar propuesta pública", y podés sobrescribir tu borrador con uno nuevo. Si querés eliminar completamente tu cuenta y todos tus datos, contactá al mantenedor.</p>
+                </details>
+                
+                <details class="faq-item">
+                    <summary>¿La web tiene publicidad?</summary>
+                    <p>No. Este sitio no obtiene ingresos por publicidad y no muestra anuncios de ningún tipo.</p>
+                </details>
             </div>
         </div>
-        
-        <!-- Tabla comparativa -->
-        <div class="comparison-section">
-            <h3>Comparación entre Divisiones</h3>
-            <div class="table-container">
-                <table id="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Variable</th>
-                            <!-- Las columnas de divisiones se generan dinámicamente -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Las filas de datos se generan dinámicamente -->
-                    </tbody>
-                </table>
+    </div>
+    
+    <!-- ============================================
+         MODAL: TÉRMINOS Y CONDICIONES
+         ============================================ -->
+    <div class="full-modal" id="terms-modal" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+        <div class="full-modal-content">
+            <button class="full-modal-close" id="terms-modal-close" aria-label="Cerrar">×</button>
+            <h2 id="terms-modal-title">Términos y condiciones</h2>
+            
+            <div class="terms-content">
+                <p>Última actualización: enero de 2025.</p>
+                
+                <p>El uso de "Divide (las) Buenos Aires" (en adelante, "el sitio") implica la aceptación plena de los siguientes términos y condiciones. Si no estás de acuerdo con alguno de ellos, te pedimos que no utilices el sitio.</p>
+                
+                <h3>1. Sobre los datos almacenados</h3>
+                <p>Al crear una propuesta y guardarla en el sitio, el usuario <strong>autoriza expresamente</strong> a los mantenedores del proyecto a almacenar y presentar públicamente los datos que forman parte de su propuesta, incluyendo de forma no exhaustiva:</p>
+                <ul>
+                    <li>El título de la propuesta.</li>
+                    <li>Los nombres asignados a cada división.</li>
+                    <li>Los departamentos y comunas incluidos en cada división.</li>
+                    <li>La cantidad de divisiones y la configuración general de la propuesta.</li>
+                    <li>El correo electrónico utilizado para la autenticación (almacenado de forma segura, no mostrado públicamente).</li>
+                </ul>
+                
+                <h3>2. Sobre el uso de las propuestas por otros usuarios</h3>
+                <p>El usuario <strong>autoriza</strong> a que otros usuarios utilicen sus propuestas públicas como base para armar propuestas propias, sin necesidad de mencionar explícitamente al autor original. Esta es una característica colaborativa inherente al proyecto.</p>
+                
+                <h3>3. Sobre la ausencia de publicidad</h3>
+                <p>El sitio <strong>no obtiene ingresos por publicidad</strong>. No se muestran anuncios ni se vende información a terceros.</p>
+                
+                <h3>4. Sobre los aportes financieros</h3>
+                <p>Cualquier aporte monetario o financiero al proyecto es <strong>voluntario</strong> y no genera ningún compromiso por parte de los mantenedores, excepto que exista una declaración explícita en contrario. Los aportes se destinan al mantenimiento del sitio (hosting, dominio, herramientas).</p>
+                
+                <h3>5. Sobre la exactitud de los datos</h3>
+                <p>El sitio <strong>no se hace responsable</strong> por cualquier inexactitud, error u omisión en los datos presentados. Si bien los datos provienen de fuentes oficiales (INDEC, IGN), pueden contener errores de procesamiento o desactualizaciones. El usuario es responsable de verificar la información con las fuentes originales antes de utilizarla con fines académicos, profesionales o de cualquier otra índole.</p>
+                
+                <h3>6. Sobre la disponibilidad del servicio</h3>
+                <p>El sitio se ofrece "tal cual está" (<em>as is</em>) y <strong>no hay garantía de provisión</strong> continua ni de disponibilidad. Los mantenedores pueden modificar, suspender o discontinuar el servicio en cualquier momento y sin previo aviso.</p>
+                
+                <h3>7. Sobre los usos comerciales</h3>
+                <p>Se <strong>renuncia a los usos comerciales no autorizados explícitamente</strong> del sitio. El sitio está pensado para uso educativo, de investigación y divulgación. Para usos comerciales, se debe contactar al mantenedor y obtener autorización previa y por escrito.</p>
+                
+                <h3>8. Sobre la autoría de propuestas de terceros</h3>
+                <p>El sitio puede presentar propuestas de individuos o instituciones que hayan ganado estado público por fuera de este sitio. En todos los casos, se atribuye adecuadamente su autoría. Si sos autor de una propuesta y considerás que la atribución es incorrecta o querés solicitar su remoción, contactá al mantenedor.</p>
+                
+                <h3>9. Sobre la propiedad intelectual</h3>
+                <p>El código fuente del proyecto está disponible bajo licencia de código abierto. Las geometrías y datos provienen de fuentes públicas y oficiales. El diseño, la marca y el nombre del sitio son propiedad de sus creadores.</p>
+                
+                <h3>10. Sobre modificaciones a los términos</h3>
+                <p>Los mantenedores pueden modificar estos términos y condiciones en cualquier momento. Las modificaciones entran en vigencia desde su publicación en el sitio. Se recomienda a los usuarios revisar periódicamente esta sección.</p>
+                
+                <h3>11. Sobre la legislación aplicable</h3>
+                <p>Estos términos y condiciones se rigen por las leyes de la República Argentina. Cualquier controversia será sometida a la jurisdicción de los tribunales ordinarios competentes de la Ciudad Autónoma de Buenos Aires.</p>
+                
+                <p class="terms-footer">Al usar el sitio, confirmás haber leído, comprendido y aceptado estos términos y condiciones.</p>
             </div>
         </div>
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
     <!-- Configuración de Supabase (generado en build) -->
     <script src="/js/config.js"></script>
     
-    <!-- Módulo de autenticación -->
+    <!-- Módulos de autenticación y UI -->
     <script src="/js/auth.js"></script>
+    <script src="/js/tabs-manager.js"></script>
+    <script src="/js/dropdown-menu.js"></script>
     
-    <!-- Scripts de la aplicación (NUEVO ORDEN DE CARGA) -->
+    <!-- Scripts de la aplicación -->
     <script src="/js/main.js"></script>
     <script src="/js/map-core.js"></script>
     <script src="/js/data-manager.js"></script>
     <script src="/js/regionalizaciones.js"></script>
     
-    <!-- Módulos divididos de ui-controls.js (cargar en orden de dependencia) -->
+    <!-- Módulos divididos de ui-controls -->
     <script src="/js/ui-controls-core.js"></script>
     <script src="/js/divisions-manager.js"></script>
     <script src="/js/regions-loader.js"></script>
