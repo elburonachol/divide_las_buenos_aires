@@ -62,7 +62,7 @@ function updateComparisonTable() {
     // -------------------------------------------------------------
     const filaCantidad = document.createElement('tr');
     const celdaVariableCantidad = document.createElement('td');
-    celdaVariableCantidad.textContent = 'Cantidad de partidos';
+    celdaVariableCantidad.innerHTML = '<a href="#datos-procesamiento" class="variable-link" data-tab="datos">Cantidad de partidos</a>';
     filaCantidad.appendChild(celdaVariableCantidad);
     
     for (let i = 1; i <= currentDivisionCount; i++) {
@@ -80,7 +80,7 @@ function updateComparisonTable() {
         // ----- Superficie total -----
         const filaSuperficie = document.createElement('tr');
         const celdaVariableSuperficie = document.createElement('td');
-        celdaVariableSuperficie.textContent = 'Superficie total (km²)';
+        celdaVariableSuperficie.innerHTML = '<a href="#datos-superficie" class="variable-link" data-tab="datos">Superficie total (km²)</a>';
         filaSuperficie.appendChild(celdaVariableSuperficie);
         
         for (let i = 1; i <= currentDivisionCount; i++) {
@@ -94,7 +94,7 @@ function updateComparisonTable() {
         // ----- Población total -----
         const filaPoblacion = document.createElement('tr');
         const celdaVariablePoblacion = document.createElement('td');
-        celdaVariablePoblacion.textContent = 'Población total';
+        celdaVariablePoblacion.innerHTML = '<a href="#datos-poblacion" class="variable-link" data-tab="datos">Población total</a>';
         filaPoblacion.appendChild(celdaVariablePoblacion);
         
         for (let i = 1; i <= currentDivisionCount; i++) {
@@ -108,7 +108,7 @@ function updateComparisonTable() {
         // ----- Densidad poblacional -----
         const filaDensidad = document.createElement('tr');
         const celdaVariableDensidad = document.createElement('td');
-        celdaVariableDensidad.textContent = 'Densidad (hab/km²)';
+        celdaVariableDensidad.innerHTML = '<a href="#datos-densidad" class="variable-link" data-tab="datos">Densidad (hab/km²)</a>';
         filaDensidad.appendChild(celdaVariableDensidad);
         
         for (let i = 1; i <= currentDivisionCount; i++) {
@@ -132,3 +132,21 @@ function updateComparisonTable() {
         tbody.appendChild(filaMensaje);
     }
 }
+
+/**
+ * CONFIGURA LOS LINKS DE LAS VARIABLES PARA QUE ABRAN LA PESTAÑA "SOBRE LOS DATOS"
+ */
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('variable-link')) {
+        e.preventDefault();
+        if (typeof activateTab === 'function') {
+            activateTab('datos');
+            // Scroll al ancla correspondiente
+            const targetId = e.target.getAttribute('href').substring(1);
+            setTimeout(() => {
+                const target = document.getElementById(targetId);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 200);
+        }
+    }
+});
