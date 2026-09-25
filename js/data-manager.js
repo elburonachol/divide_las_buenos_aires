@@ -286,20 +286,20 @@ function calcularTotalDivision(grupoId, variable) {
     
     // Sumar la variable para cada elemento (departamento o comuna) en la división
     elementosEnGrupo.forEach(nombreElemento => {
-    const codigo = obtenerCodigoCdePorNombre(nombreElemento);
-    if (codigo) {
-        // Primero intentar con datos de partidos (PBA)
-        if (partidosData.datos[codigo] && partidosData.datos[codigo][variable] !== undefined) {
-            total += partidosData.datos[codigo][variable];
-            elementosConDatos++;
+        const codigo = obtenerCodigoCdePorNombre(nombreElemento);
+        if (codigo) {
+            // Primero intentar con datos de partidos (PBA)
+            if (partidosData && partidosData.datos[codigo] && partidosData.datos[codigo][variable] !== undefined) {
+                total += partidosData.datos[codigo][variable];
+                elementosConDatos++;
+            }
+            // Si no, intentar con datos de comunas (CABA)
+            else if (datosComuna && datosComuna.datos[codigo] && datosComuna.datos[codigo][variable] !== undefined) {
+                total += datosComuna.datos[codigo][variable];
+                elementosConDatos++;
+            }
         }
-        // Si no, intentar con datos de comunas (CABA)
-        else if (datosComuna && datosComuna.datos[codigo] && datosComuna.datos[codigo][variable] !== undefined) {
-            total += datosComuna.datos[codigo][variable];
-            elementosConDatos++;
-        }
-    }
-});
+    });
     
     // Solo retornar total si encontramos datos para al menos un elemento
     return elementosConDatos > 0 ? total : 0;
@@ -319,4 +319,25 @@ function calcularDensidadDivision(grupoId) {
         return poblacion / superficie;  // devuelve número con precisión completa
     }
     return 0;  // en lugar de '0.0', para que formatearNumero lo maneje
+}
+
+/**
+ * FORMATEA UN VALOR MONETARIO EN MILLONES DE PESOS
+ * @param {number} valor - Valor numérico en millones
+ * @returns {string} - Valor formateado (ej: "$ 12.345 M")
+ */
+function formatearMoneda(valor) {
+    if (valor === 0 || valor === '0') return '$ 0';
+    if (!valor && valor !== 0) return '-';
+    
+    const num = parseFloat(valor);
+    if (isNaN(num)) return '-';
+    
+    // Redondear a entero (millones)
+    const entero = Math.round(num);
+    
+    // Formatear con separador de miles
+    const formateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    return `$ ${formateado} M`;
 }
