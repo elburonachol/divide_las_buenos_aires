@@ -47,6 +47,14 @@
 }
 
 .group-list {
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    /* Sin borde punteado, sin altura mínima forzada */
+}
+
+/* VIEJOS VALORES, POR SI NO FUNCIONAN BIEN LOS PARÁMETROS DE ARRIBA
+/* .group-list {
     min-height: 100px;
     max-height: 200px;
     overflow-y: auto;
@@ -168,37 +176,59 @@
 
 /* =============================================
    CAJAS DE DIVISIÓN CONTRAÍBLES
-   - Estado retraído: sólo nombre visible
-   - Hover con delay: se expande mostrando 4 depts con scroll
+   - Estado retraído: sólo nombre visible, altura ~2x título
+   - Hover con delay: se expande mostrando título + 3 depts con scroll
    - Drag & drop: se expande inmediatamente (clase .expanded)
    ============================================= */
+
+/* Altura base de la caja en estado colapsado: ~2x altura del título */
+.group-box {
+    min-height: 60px;
+    padding: 8px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.group-box .editable-division-name {
+    margin: 0;
+    padding: 8px 6px;
+    font-size: 15px;
+}
 
 /* Estado por defecto: la lista de departamentos está oculta */
 .group-box .group-list {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.2s ease;
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
     transition-delay: 0s;
     opacity: 0;
+    margin-top: 0;
+    min-height: 0;
+    padding: 0 10px;
 }
 
 /* Al pasar el cursor: se expande después de un delay razonable */
 .group-box:hover .group-list {
-    max-height: 160px;
+    max-height: 150px;
     overflow-y: auto;
-    transition-delay: 0.5s;
+    transition-delay: 0.6s;
     opacity: 1;
+    margin-top: 8px;
+    padding: 8px 10px;
 }
 
 /* Durante drag & drop: se expande inmediatamente */
 .group-box.expanded .group-list {
-    max-height: 160px;
+    max-height: 150px;
     overflow-y: auto;
     transition-delay: 0s;
     opacity: 1;
+    margin-top: 8px;
+    padding: 8px 10px;
 }
 
-/* Estilo de la scrollbar dentro de las cajas de división */
+/* Scrollbar dentro de las cajas de división */
 .group-box .group-list::-webkit-scrollbar {
     width: 6px;
 }
