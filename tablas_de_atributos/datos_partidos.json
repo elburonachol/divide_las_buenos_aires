@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "ultima_actualizacion": "2026-08-22",
+    "ultima_actualizacion": "2026-09-26",
     "elaboracion": "Datos procesados para mapa interactivo de división provincial",
-    "version_estructura": "1.0",
+    "version_estructura": "1.2",
     "fuentes_principales": [
-      "INDEC, Proyecciones de población 2020.",
-      "Instituto Geográfico Nacional (IGN): Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina. Tabla 12: Valores poblacionales proyectados al año 2020 y de superficie correspondientes a las provincias de la República Argentina, pág. 25.",
-      "IGN, Tabla 13: Valores poblacionales proyectados al año 2020 y de superficie correspondientes a los partidos de la provincia de Buenos Aires, pág. 27."
+      "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022. Resultados definitivos.",
+      "Instituto Geográfico Nacional (IGN): Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina. Tabla 13: Valores poblacionales proyectados al año 2020 y de superficie correspondientes a los partidos de la provincia de Buenos Aires, pág. 27.",
+      "Dirección Provincial de Estadística de la Provincia de Buenos Aires. Producto Bruto Geográfico de la Provincia de Buenos Aires por partido. Valores en miles de pesos constantes de 2004."
     ],
-    "nota": "Los datos de población son proyecciones al año 2020."
+    "nota": "Los datos de población y superficie corresponden al Censo 2022. El PBG está expresado en miles de pesos constantes de 2004 (en el CSV original se encuentra en pesos; el script lo divide por 1000)."
   },
   "variables": {
     "cde": {
@@ -29,686 +29,830 @@
       "nombre": "Población Total",
       "tipo": "entero",
       "unidad": "personas",
-      "descripcion": "Población total proyectada al año 2020 según INDEC.",
+      "descripcion": "Población total según Censo 2022.",
       "operacion": "suma",
-      "fuente": "INDEC, Proyecciones de población 2020"
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
+    },
+    "pbg": {
+      "nombre": "Producto Bruto Geográfico",
+      "tipo": "decimal",
+      "unidad": "miles de pesos constantes de 2004",
+      "descripcion": "Producto Bruto Geográfico del partido, expresado en miles de pesos constantes de 2004. Fuente: Dirección Provincial de Estadística de PBA. (En el CSV original el valor está en pesos; el script lo divide por 1000.)",
+      "operacion": "suma",
+      "fuente": "Dirección Provincial de Estadística de la Provincia de Buenos Aires",
+      "factor": 0.001
     }
   },
   "datos": {
     "6007": {
       "cde": "6007",
       "superficie": 5881.6,
-      "poblacion_total": 17552
+      "poblacion_total": 17552,
+      "pbg": 526732.7208
     },
     "6014": {
       "cde": "6014",
       "superficie": 3788.7,
-      "poblacion_total": 12914
+      "poblacion_total": 12914,
+      "pbg": 382608.99860000005
     },
     "6021": {
       "cde": "6021",
       "superficie": 1122.6,
-      "poblacion_total": 12982
+      "poblacion_total": 12982,
+      "pbg": 303444.59910000005
     },
     "6028": {
       "cde": "6028",
       "superficie": 129.3,
-      "poblacion_total": 584827
+      "poblacion_total": 584827,
+      "pbg": 6275989.872
     },
     "6035": {
       "cde": "6035",
       "superficie": 56.2,
-      "poblacion_total": 367554
+      "poblacion_total": 367554,
+      "pbg": 6153177.885
     },
     "6042": {
       "cde": "6042",
       "superficie": 6756.1,
-      "poblacion_total": 21977
+      "poblacion_total": 21977,
+      "pbg": 419301.22910000006
     },
     "6049": {
       "cde": "6049",
       "superficie": 6537.8,
-      "poblacion_total": 75905
+      "poblacion_total": 75905,
+      "pbg": 1426009.257
     },
     "6056": {
       "cde": "6056",
       "superficie": 2239.9,
-      "poblacion_total": 336557
+      "poblacion_total": 336557,
+      "pbg": 5449991.049
     },
     "6063": {
       "cde": "6063",
       "superficie": 4119.6,
-      "poblacion_total": 48982
+      "poblacion_total": 48982,
+      "pbg": 1067349.056
     },
     "6070": {
       "cde": "6070",
       "superficie": 1529.7,
-      "poblacion_total": 40002
+      "poblacion_total": 40002,
+      "pbg": 647657.8581000001
     },
     "6077": {
       "cde": "6077",
       "superficie": 1243.8,
-      "poblacion_total": 32215
+      "poblacion_total": 32215,
+      "pbg": 632588.3740000001
     },
     "6084": {
       "cde": "6084",
       "superficie": 5336.0,
-      "poblacion_total": 22292
+      "poblacion_total": 22292,
+      "pbg": 664944.0119
     },
     "6091": {
       "cde": "6091",
       "superficie": 220.2,
-      "poblacion_total": 358712
+      "poblacion_total": 358712,
+      "pbg": 3969267.725
     },
     "6098": {
       "cde": "6098",
       "superficie": 144.5,
-      "poblacion_total": 100930
+      "poblacion_total": 100930,
+      "pbg": 920124.507
     },
     "6105": {
       "cde": "6105",
       "superficie": 4934.7,
-      "poblacion_total": 37594
+      "poblacion_total": 37594,
+      "pbg": 786220.5641000001
     },
     "6112": {
       "cde": "6112",
       "superficie": 2198.5,
-      "poblacion_total": 46504
+      "poblacion_total": 46504,
+      "pbg": 872121.3484
     },
     "6119": {
       "cde": "6119",
       "superficie": 1114.2,
-      "poblacion_total": 32448
+      "poblacion_total": 32448,
+      "pbg": 577690.2456
     },
     "6126": {
       "cde": "6126",
       "superficie": 986.3,
-      "poblacion_total": 110566
+      "poblacion_total": 110566,
+      "pbg": 5326900.7930000005
     },
     "6134": {
       "cde": "6134",
       "superficie": 1186.2,
-      "poblacion_total": 70684
+      "poblacion_total": 70684,
+      "pbg": 939336.9218
     },
     "6140": {
       "cde": "6140",
       "superficie": 548.9,
-      "poblacion_total": 15965
+      "poblacion_total": 15965,
+      "pbg": 332844.62289999996
     },
     "6147": {
       "cde": "6147",
       "superficie": 2531.7,
-      "poblacion_total": 23100
+      "poblacion_total": 23100,
+      "pbg": 624627.9276
     },
     "6154": {
       "cde": "6154",
       "superficie": 3912.2,
-      "poblacion_total": 14079
+      "poblacion_total": 14079,
+      "pbg": 359068.9748
     },
     "6161": {
       "cde": "6161",
       "superficie": 1061.4,
-      "poblacion_total": 17499
+      "poblacion_total": 17499,
+      "pbg": 334162.0243
     },
     "6168": {
       "cde": "6168",
       "superficie": 2112.9,
-      "poblacion_total": 9594
+      "poblacion_total": 9594,
+      "pbg": 207457.8016
     },
     "6175": {
       "cde": "6175",
       "superficie": 1000.9,
-      "poblacion_total": 27504
+      "poblacion_total": 27504,
+      "pbg": 488637.6809
     },
     "6182": {
       "cde": "6182",
       "superficie": 1289.9,
-      "poblacion_total": 67503
+      "poblacion_total": 67503,
+      "pbg": 612281.216
     },
     "6189": {
       "cde": "6189",
       "superficie": 5844.9,
-      "poblacion_total": 15968
+      "poblacion_total": 15968,
+      "pbg": 610649.2193
     },
     "6196": {
       "cde": "6196",
       "superficie": 5256.7,
-      "poblacion_total": 24420
+      "poblacion_total": 24420,
+      "pbg": 597876.966
     },
     "6203": {
       "cde": "6203",
       "superficie": 5984.1,
-      "poblacion_total": 42110
+      "poblacion_total": 42110,
+      "pbg": 917629.3467000001
     },
     "6210": {
       "cde": "6210",
       "superficie": 2290.1,
-      "poblacion_total": 52729
+      "poblacion_total": 52729,
+      "pbg": 1030801.6070000001
     },
     "6218": {
       "cde": "6218",
       "superficie": 3159.2,
-      "poblacion_total": 42452
+      "poblacion_total": 42452,
+      "pbg": 605332.2929
     },
     "6224": {
       "cde": "6224",
       "superficie": 2058.9,
-      "poblacion_total": 70839
+      "poblacion_total": 70839,
+      "pbg": 1101373.852
     },
     "6231": {
       "cde": "6231",
       "superficie": 3822.8,
-      "poblacion_total": 18422
+      "poblacion_total": 18422,
+      "pbg": 532155.1881
     },
     "6238": {
       "cde": "6238",
       "superficie": 1977.5,
-      "poblacion_total": 32032
+      "poblacion_total": 32032,
+      "pbg": 306175.859
     },
     "6245": {
       "cde": "6245",
       "superficie": 113.5,
-      "poblacion_total": 63997
+      "poblacion_total": 63997,
+      "pbg": 3870419.181
     },
     "6252": {
       "cde": "6252",
       "superficie": 301.0,
-      "poblacion_total": 256268
+      "poblacion_total": 256268,
+      "pbg": 4000767.6890000002
     },
     "6260": {
       "cde": "6260",
       "superficie": 121.3,
-      "poblacion_total": 338480
+      "poblacion_total": 338480,
+      "pbg": 3570391.49
     },
     "6266": {
       "cde": "6266",
       "superficie": 636.5,
-      "poblacion_total": 40159
+      "poblacion_total": 40159,
+      "pbg": 708364.3331
     },
     "6270": {
       "cde": "6270",
       "superficie": 238.2,
-      "poblacion_total": 201511
+      "poblacion_total": 201511,
+      "pbg": 2543125.754
     },
     "6274": {
       "cde": "6274",
       "superficie": 189.5,
-      "poblacion_total": 496433
+      "poblacion_total": 496433,
+      "pbg": 4350780.1450000005
     },
     "6277": {
       "cde": "6277",
       "superficie": 1812.8,
-      "poblacion_total": 10790
+      "poblacion_total": 10790,
+      "pbg": 277450.7118
     },
     "6280": {
       "cde": "6280",
       "superficie": 1627.8,
-      "poblacion_total": 45526
+      "poblacion_total": 45526,
+      "pbg": 623352.6248
     },
     "6287": {
       "cde": "6287",
       "superficie": 3366.4,
-      "poblacion_total": 12631
+      "poblacion_total": 12631,
+      "pbg": 213771.8877
     },
     "6294": {
       "cde": "6294",
       "superficie": 1486.4,
-      "poblacion_total": 16350
+      "poblacion_total": 16350,
+      "pbg": 401187.08139999997
     },
     "6301": {
       "cde": "6301",
       "superficie": 1857.5,
-      "poblacion_total": 20791
+      "poblacion_total": 20791,
+      "pbg": 288911.6622
     },
     "6308": {
       "cde": "6308",
       "superficie": 2326.4,
-      "poblacion_total": 3174
+      "poblacion_total": 3174,
+      "pbg": 84276.7574
     },
     "6315": {
       "cde": "6315",
       "superficie": 2982.3,
-      "poblacion_total": 22624
+      "poblacion_total": 22624,
+      "pbg": 361498.635
     },
     "6322": {
       "cde": "6322",
       "superficie": 4814.0,
-      "poblacion_total": 11618
+      "poblacion_total": 11618,
+      "pbg": 302926.643
     },
     "6329": {
       "cde": "6329",
       "superficie": 751.3,
-      "poblacion_total": 18022
+      "poblacion_total": 18022,
+      "pbg": 312069.66980000003
     },
     "6336": {
       "cde": "6336",
       "superficie": 2704.6,
-      "poblacion_total": 4870
+      "poblacion_total": 4870,
+      "pbg": 91601.0203
     },
     "6343": {
       "cde": "6343",
       "superficie": 1199.9,
-      "poblacion_total": 14207
+      "poblacion_total": 14207,
+      "pbg": 188674.5452
     },
     "6351": {
       "cde": "6351",
       "superficie": 2558.1,
-      "poblacion_total": 12941
+      "poblacion_total": 12941,
+      "pbg": 410013.5258
     },
     "6357": {
       "cde": "6357",
       "superficie": 1462.3,
-      "poblacion_total": 667082
+      "poblacion_total": 667082,
+      "pbg": 9259442.392
     },
     "6364": {
       "cde": "6364",
       "superficie": 366.5,
-      "poblacion_total": 142709
+      "poblacion_total": 142709,
+      "pbg": 1726746.161
     },
     "6371": {
       "cde": "6371",
       "superficie": 56.5,
-      "poblacion_total": 450518
+      "poblacion_total": 450518,
+      "pbg": 6484513.1110000005
     },
     "6385": {
       "cde": "6385",
       "superficie": 2140.2,
-      "poblacion_total": 22649
+      "poblacion_total": 22649,
+      "pbg": 451271.8363
     },
     "6392": {
       "cde": "6392",
       "superficie": 7261.7,
-      "poblacion_total": 35251
+      "poblacion_total": 35251,
+      "pbg": 1113263.838
     },
     "6399": {
       "cde": "6399",
       "superficie": 4824.2,
-      "poblacion_total": 11801
+      "poblacion_total": 11801,
+      "pbg": 467735.306
     },
     "6406": {
       "cde": "6406",
       "superficie": 1645.3,
-      "poblacion_total": 10661
+      "poblacion_total": 10661,
+      "pbg": 304707.4014
     },
     "6408": {
       "cde": "6408",
       "superficie": 35.8,
-      "poblacion_total": 185641
+      "poblacion_total": 185641,
+      "pbg": 2375825.142
     },
     "6410": {
       "cde": "6410",
       "superficie": 38.1,
-      "poblacion_total": 180232
+      "poblacion_total": 180232,
+      "pbg": 2220481.057
     },
     "6412": {
       "cde": "6412",
       "superficie": 50.2,
-      "poblacion_total": 326992
+      "poblacion_total": 326992,
+      "pbg": 3390239.319
     },
     "6413": {
       "cde": "6413",
       "superficie": 2254.7,
-      "poblacion_total": 103787
+      "poblacion_total": 103787,
+      "pbg": 1668707.53
     },
     "6420": {
       "cde": "6420",
       "superficie": 233.9,
-      "poblacion_total": 100689
+      "poblacion_total": 100689,
+      "pbg": 1028432.593
     },
     "6427": {
       "cde": "6427",
       "superficie": 327.4,
-      "poblacion_total": 1841247
+      "poblacion_total": 1841247,
+      "pbg": 18284056.04
     },
     "6434": {
       "cde": "6434",
       "superficie": 50.2,
-      "poblacion_total": 461267
+      "poblacion_total": 461267,
+      "pbg": 6132879.927
     },
     "6441": {
       "cde": "6441",
       "superficie": 892.8,
-      "poblacion_total": 768547
+      "poblacion_total": 768547,
+      "pbg": 8188786.146
     },
     "6448": {
       "cde": "6448",
       "superficie": 3448.0,
-      "poblacion_total": 11646
+      "poblacion_total": 11646,
+      "pbg": 222087.9091
     },
     "6455": {
       "cde": "6455",
       "superficie": 3341.0,
-      "poblacion_total": 27239
+      "poblacion_total": 27239,
+      "pbg": 379220.2549
     },
     "6462": {
       "cde": "6462",
       "superficie": 1606.2,
-      "poblacion_total": 17266
+      "poblacion_total": 17266,
+      "pbg": 393727.4252
     },
     "6466": {
       "cde": "6466",
       "superficie": 1047.4,
-      "poblacion_total": 6221
+      "poblacion_total": 6221,
+      "pbg": 97728.1218
     },
     "6469": {
       "cde": "6469",
       "superficie": 5778.3,
-      "poblacion_total": 45506
+      "poblacion_total": 45506,
+      "pbg": 1003464.118
     },
     "6476": {
       "cde": "6476",
       "superficie": 4720.3,
-      "poblacion_total": 18243
+      "poblacion_total": 18243,
+      "pbg": 687144.4808
     },
     "6483": {
       "cde": "6483",
       "superficie": 1725.5,
-      "poblacion_total": 41760
+      "poblacion_total": 41760,
+      "pbg": 593557.2365
     },
     "6490": {
       "cde": "6490",
       "superficie": 88.7,
-      "poblacion_total": 690480
+      "poblacion_total": 690480,
+      "pbg": 7688686.529
     },
     "6497": {
       "cde": "6497",
       "superficie": 771.3,
-      "poblacion_total": 111251
+      "poblacion_total": 111251,
+      "pbg": 1921462.3530000001
     },
     "6505": {
       "cde": "6505",
       "superficie": 1849.6,
-      "poblacion_total": 26613
+      "poblacion_total": 26613,
+      "pbg": 334144.4947
     },
     "6511": {
       "cde": "6511",
       "superficie": 2604.0,
-      "poblacion_total": 11323
+      "poblacion_total": 11323,
+      "pbg": 177865.47319999998
     },
     "6515": {
       "cde": "6515",
       "superficie": 62.9,
-      "poblacion_total": 350674
+      "poblacion_total": 350674,
+      "pbg": 4962012.459
     },
     "6518": {
       "cde": "6518",
       "superficie": 3088.5,
-      "poblacion_total": 33110
+      "poblacion_total": 33110,
+      "pbg": 498580.66630000004
     },
     "6525": {
       "cde": "6525",
       "superficie": 422.2,
-      "poblacion_total": 67011
+      "poblacion_total": 67011,
+      "pbg": 780089.4669
     },
     "6532": {
       "cde": "6532",
       "superficie": 1049.5,
-      "poblacion_total": 72980
+      "poblacion_total": 72980,
+      "pbg": 935180.633
     },
     "6539": {
       "cde": "6539",
       "superficie": 174.1,
-      "poblacion_total": 582486
+      "poblacion_total": 582486,
+      "pbg": 6020718.5770000005
     },
     "6547": {
       "cde": "6547",
       "superficie": 1875.6,
-      "poblacion_total": 24868
+      "poblacion_total": 24868,
+      "pbg": 442728.6366
     },
     "6553": {
       "cde": "6553",
       "superficie": 200.3,
-      "poblacion_total": 8465
+      "poblacion_total": 8465,
+      "pbg": 143356.41280000002
     },
     "6560": {
       "cde": "6560",
       "superficie": 186.2,
-      "poblacion_total": 576632
+      "poblacion_total": 576632,
+      "pbg": 5334652.672
     },
     "6568": {
       "cde": "6568",
       "superficie": 55.1,
-      "poblacion_total": 331183
+      "poblacion_total": 331183,
+      "pbg": 4319165.278
     },
     "6574": {
       "cde": "6574",
       "superficie": 1619.5,
-      "poblacion_total": 19899
+      "poblacion_total": 19899,
+      "pbg": 394457.2202
     },
     "6581": {
       "cde": "6581",
       "superficie": 4566.1,
-      "poblacion_total": 102110
+      "poblacion_total": 102110,
+      "pbg": 1701684.1770000001
     },
     "6588": {
       "cde": "6588",
       "superficie": 4290.9,
-      "poblacion_total": 52607
+      "poblacion_total": 52607,
+      "pbg": 1169413.316
     },
     "6595": {
       "cde": "6595",
       "superficie": 7666.2,
-      "poblacion_total": 125751
+      "poblacion_total": 125751,
+      "pbg": 2339013.044
     },
     "6602": {
       "cde": "6602",
       "superficie": 13564.4,
-      "poblacion_total": 37646
+      "poblacion_total": 37646,
+      "pbg": 501413.20560000004
     },
     "6609": {
       "cde": "6609",
       "superficie": 4523.2,
-      "poblacion_total": 44783
+      "poblacion_total": 44783,
+      "pbg": 984700.2618
     },
     "6616": {
       "cde": "6616",
       "superficie": 1821.0,
-      "poblacion_total": 7143
+      "poblacion_total": 7143,
+      "pbg": 212124.50519999999
     },
     "6623": {
       "cde": "6623",
       "superficie": 3004.7,
-      "poblacion_total": 115340
+      "poblacion_total": 115340,
+      "pbg": 1977984.17
     },
     "6630": {
       "cde": "6630",
       "superficie": 3449.4,
-      "poblacion_total": 4642
+      "poblacion_total": 4642,
+      "pbg": 117898.02459999999
     },
     "6638": {
       "cde": "6638",
       "superficie": 384.7,
-      "poblacion_total": 394754
+      "poblacion_total": 394754,
+      "pbg": 6226216.648
     },
     "6644": {
       "cde": "6644",
       "superficie": 65.7,
-      "poblacion_total": 39449
+      "poblacion_total": 39449,
+      "pbg": 447584.454
     },
     "6648": {
       "cde": "6648",
       "superficie": 122.0,
-      "poblacion_total": 102106
+      "poblacion_total": 102106,
+      "pbg": 924066.8491
     },
     "6651": {
       "cde": "6651",
       "superficie": 6376.3,
-      "poblacion_total": 16613
+      "poblacion_total": 16613,
+      "pbg": 374991.434
     },
     "6655": {
       "cde": "6655",
       "superficie": 1605.4,
-      "poblacion_total": 12297
+      "poblacion_total": 12297,
+      "pbg": 148672.4156
     },
     "6658": {
       "cde": "6658",
       "superficie": 91.6,
-      "poblacion_total": 633391
+      "poblacion_total": 633391,
+      "pbg": 7384957.798
     },
     "6665": {
       "cde": "6665",
       "superficie": 1047.6,
-      "poblacion_total": 39730
+      "poblacion_total": 39730,
+      "pbg": 675928.8166
     },
     "6672": {
       "cde": "6672",
       "superficie": 4312.8,
-      "poblacion_total": 16635
+      "poblacion_total": 16635,
+      "pbg": 262272.6096
     },
     "6679": {
       "cde": "6679",
       "superficie": 3955.0,
-      "poblacion_total": 19849
+      "poblacion_total": 19849,
+      "pbg": 608482.1371
     },
     "6686": {
       "cde": "6686",
       "superficie": 2060.4,
-      "poblacion_total": 25627
+      "poblacion_total": 25627,
+      "pbg": 784366.1717000001
     },
     "6693": {
       "cde": "6693",
       "superficie": 1556.2,
-      "poblacion_total": 13977
+      "poblacion_total": 13977,
+      "pbg": 370480.5059
     },
     "6700": {
       "cde": "6700",
       "superficie": 3546.2,
-      "poblacion_total": 22347
+      "poblacion_total": 22347,
+      "pbg": 413967.244
     },
     "6707": {
       "cde": "6707",
       "superficie": 2706.4,
-      "poblacion_total": 35656
+      "poblacion_total": 35656,
+      "pbg": 595145.199
     },
     "6714": {
       "cde": "6714",
       "superficie": 1611.1,
-      "poblacion_total": 39425
+      "poblacion_total": 39425,
+      "pbg": 905946.7036
     },
     "6721": {
       "cde": "6721",
       "superficie": 796.4,
-      "poblacion_total": 9427
+      "poblacion_total": 9427,
+      "pbg": 214709.5491
     },
     "6728": {
       "cde": "6728",
       "superficie": 1129.2,
-      "poblacion_total": 26510
+      "poblacion_total": 26510,
+      "pbg": 499358.21160000004
     },
     "6735": {
       "cde": "6735",
       "superficie": 861.8,
-      "poblacion_total": 26897
+      "poblacion_total": 26897,
+      "pbg": 521310.34
     },
     "6742": {
       "cde": "6742",
       "superficie": 2997.3,
-      "poblacion_total": 8994
+      "poblacion_total": 8994,
+      "pbg": 368856.27489999996
     },
     "6749": {
       "cde": "6749",
       "superficie": 992.8,
-      "poblacion_total": 171616
+      "poblacion_total": 171616,
+      "pbg": 2584739.433
     },
     "6756": {
       "cde": "6756",
       "superficie": 52.4,
-      "poblacion_total": 297282
+      "poblacion_total": 297282,
+      "pbg": 5245142.0030000005
     },
     "6760": {
       "cde": "6760",
       "superficie": 82.8,
-      "poblacion_total": 328835
+      "poblacion_total": 328835,
+      "pbg": 3588446.08
     },
     "6763": {
       "cde": "6763",
       "superficie": 680.6,
-      "poblacion_total": 168041
+      "poblacion_total": 168041,
+      "pbg": 4977922.8950000005
     },
     "6770": {
       "cde": "6770",
       "superficie": 1356.5,
-      "poblacion_total": 68613
+      "poblacion_total": 68613,
+      "pbg": 992921.4283
     },
     "6778": {
       "cde": "6778",
       "superficie": 660.8,
-      "poblacion_total": 98215
+      "poblacion_total": 98215,
+      "pbg": 1120125.226
     },
     "6784": {
       "cde": "6784",
       "superficie": 943.0,
-      "poblacion_total": 11786
+      "poblacion_total": 11786,
+      "pbg": 216378.35030000002
     },
     "6791": {
       "cde": "6791",
       "superficie": 4855.0,
-      "poblacion_total": 145575
+      "poblacion_total": 145575,
+      "pbg": 2252628.3680000002
     },
     "6798": {
       "cde": "6798",
       "superficie": 4168.5,
-      "poblacion_total": 10783
+      "poblacion_total": 10783,
+      "pbg": 161065.4388
     },
     "6805": {
       "cde": "6805",
       "superficie": 393.9,
-      "poblacion_total": 446949
+      "poblacion_total": 446949,
+      "pbg": 6627380.338
     },
     "6812": {
       "cde": "6812",
       "superficie": 1334.4,
-      "poblacion_total": 2542
+      "poblacion_total": 2542,
+      "pbg": 40670.9262
     },
     "6819": {
       "cde": "6819",
       "superficie": 4160.2,
-      "poblacion_total": 14810
+      "poblacion_total": 14810,
+      "pbg": 276742.1216
     },
     "6826": {
       "cde": "6826",
       "superficie": 5498.3,
-      "poblacion_total": 49499
+      "poblacion_total": 49499,
+      "pbg": 1174113.56
     },
     "6833": {
       "cde": "6833",
       "superficie": 5927.2,
-      "poblacion_total": 62426
+      "poblacion_total": 62426,
+      "pbg": 1436414.112
     },
     "6840": {
       "cde": "6840",
       "superficie": 45.4,
-      "poblacion_total": 364176
+      "poblacion_total": 364176,
+      "pbg": 5778265.446
     },
     "6847": {
       "cde": "6847",
       "superficie": 1252.0,
-      "poblacion_total": 9164
+      "poblacion_total": 9164,
+      "pbg": 181619.63830000002
     },
     "6854": {
       "cde": "6854",
       "superficie": 4789.1,
-      "poblacion_total": 35563
+      "poblacion_total": 35563,
+      "pbg": 843331.0480000001
     },
     "6861": {
       "cde": "6861",
       "superficie": 34.5,
-      "poblacion_total": 282280
+      "poblacion_total": 282280,
+      "pbg": 5181365.335
     },
     "6868": {
       "cde": "6868",
       "superficie": 164.4,
-      "poblacion_total": 37463
+      "poblacion_total": 37463,
+      "pbg": 401010.20780000003
     },
     "6875": {
       "cde": "6875",
       "superficie": 10399.0,
-      "poblacion_total": 32717
+      "poblacion_total": 32717,
+      "pbg": 521822.13580000005
     },
     "6882": {
       "cde": "6882",
       "superficie": 1185.1,
-      "poblacion_total": 132221
+      "poblacion_total": 132221,
+      "pbg": 3083039.716
     }
   }
 }
