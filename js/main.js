@@ -84,7 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadPartidosData(),     // Datos de superficie y población de PBA
         loadRegionesExistentes(), // Regiones predefinidas
         loadComunasCABA(),      // Geometrías de comunas de CABA
-        loadDatosComuna()       // Datos de superficie y población de CABA
+        loadDatosComuna(),      // Datos de superficie y población de CABA
+        loadDatosProvincias()   // Datos de otras provincias (todavía no existe el archivo)
     ]).then(() => {
         console.log('✅ Todos los datos cargados correctamente');
         
