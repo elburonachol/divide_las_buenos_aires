@@ -178,7 +178,7 @@
              TAB 2: SOBRE LOS DATOS
              ============================================ -->
         <section class="tab-content" id="tab-datos" role="tabpanel">
-                        <div class="info-section">
+            <div class="info-section">
                 <h2>Sobre los datos</h2>
                 
                 <h3 id="datos-poblacion-superficie">Población y Superficie</h3>
@@ -194,12 +194,12 @@
                 
                 <h3 id="datos-superficie">Superficie</h3>
                 <p>
-                    La superficie se expresa en kilómetros cuadrados (km²) y corresponde al documento "Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina" del Instituto Geográfico Nacional (IGN). Para los partidos de la Provincia de Buenos Aires se utiliza la <em>Tabla 13 (pág. 27)</em>; para las comunas de CABA, la <em>Tabla 17 (pág. 37)</em>.
+                    La superficie se expresa en kilómetros cuadrados (km²) y corresponde al documento "Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina" del Instituto Geográfico Nacional (IGN). Para los partidos de la Provincia de Buenos Aires se utiliza la <em>Tabla 13 (pág. 27)</em>; para las comunas de CABA, la <em>Tabla 17 (pág. 37)</em>; y para las provincias, la <em>Tabla 12 (pág. 25)</em>.
                 </p>
                 
                 <h3 id="datos-poblacion">Población</h3>
                 <p>
-                    Población total por partido (PBA) y por comuna (CABA) según los resultados definitivos del Censo 2022 del INDEC.
+                    Población total por partido (PBA), por comuna (CABA) y por provincia, según los resultados definitivos del Censo 2022 del INDEC.
                 </p>
                 
                 <h3 id="datos-densidad">Densidad de población</h3>
@@ -212,31 +212,45 @@
                 
                 <h3 id="datos-pbg">Producto Bruto Geográfico (PBG)</h3>
                 <p>
-                    El Producto Bruto Geográfico es un indicador económico que mide el valor de todos los bienes y servicios finales producidos en un territorio durante un período determinado. No se incluyen impuestos. Por provenir de distintas fuentes, la sumatoria del PBG los departamentos de la Provincia de Buenos Aires y la sumatoria del PGB de las comunas de la Ciudad Autónoma de Buenos Aires pueden no ser iguales a los totales a nivel jurisdiccional correspondientes. Todos los valores se expresan en <strong>miles de pesos constantes de 2004</strong>.
+                    El Producto Bruto Geográfico es un indicador económico que mide el valor de todos los bienes y servicios finales producidos en un territorio durante un período determinado. No se incluyen impuestos. Por provenir de distintas fuentes, la sumatoria del PBG de los departamentos de la Provincia de Buenos Aires y la sumatoria del PBG de las comunas de la Ciudad Autónoma de Buenos Aires pueden no ser exactamente iguales a los totales a nivel jurisdiccional correspondientes. Todos los valores se expresan en <strong>millones de pesos constantes de 2004</strong>.
                 </p>
                 <p>
-                    <strong>Fuente PBA:</strong> Dirección Provincial de Estadística de la Provincia de Buenos Aires. Producto Bruto Geográfico de la Provincia de Buenos Aires por partido. Datos 2022. <br>
-                    <strong>Fuente CABA:</strong> Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires. Producto Geográfico Bruto por comunas. Datos 2004, proyectados a 2022 en base al crecimiento del PGB a nivel de CABA (~28,25%). <br>
-                    <strong>Fuente resto de provincias:</strong> Comisión Económica para América Latina. Desagregación provincial del valor agregado bruto de la Argentina, base 2004. Datos 2022.
+                    <strong>Fuente PBA:</strong> Dirección Provincial de Estadística de la Provincia de Buenos Aires. Producto Bruto Geográfico de la Provincia de Buenos Aires por partido. Datos 2022.<br>
+                    <strong>Fuente CABA:</strong> Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires. Producto Geográfico Bruto por comunas, proyectado a 2022.<br>
+                    <strong>Fuente resto de provincias:</strong> Comisión Económica para América Latina y el Caribe (CEPAL). Desagregación provincial del valor agregado bruto de la Argentina, base 2004. Datos 2022.
                 </p>
                 <p>
                     La tabla comparativa permite alternar entre dos formas de presentar el PBG mediante un botón gris ubicado en el encabezado de la columna:
                 </p>
                 <ul>
-                    <li><strong>Total:</strong> se muestra el PBG total de la división (suma de los PBG de los departamentos y comunas que la integran).</li>
-                    <li><strong>Per cápita:</strong> se muestra el PBG dividido por la población total de la división, es decir, el producto por habitante. El resultado se expresa también en miles de pesos constantes de 2004 por habitante.</li>
+                    <li><strong>Total:</strong> se muestra el PBG total de la división o provincia, en millones de pesos constantes de 2004.</li>
+                    <li><strong>Per cápita:</strong> se muestra el PBG dividido por la población, expresado en <strong>pesos constantes de 2004 por habitante</strong>. Para pasar de millones a pesos, el valor del PBG se multiplica por 1.000.000 antes de dividir por la población.</li>
                 </ul>
                 <p>
-                    <strong>Fórmula del PBG per cápita:</strong> PBG per cápita = PBG total de la división ÷ Población total de la división
+                    <strong>Fórmula del PBG per cápita:</strong> PBG per cápita = (PBG total × 1.000.000) ÷ Población total
+                </p>
+                
+                <h3 id="datos-nbi">Hogares con Necesidades Básicas Insatisfechas (NBI)</h3>
+                <p>
+                    El porcentaje de hogares con NBI se calcula como el cociente entre la cantidad de hogares con Necesidades Básicas Insatisfechas y la cantidad total de hogares de la unidad considerada, expresado en porcentaje.
+                </p>
+                <p>
+                    <strong>Fuente:</strong> INDEC, Censo Nacional de Población, Hogares y Viviendas 2022. Resultados definitivos.
+                </p>
+                <p>
+                    <strong>Fórmula:</strong> % Hogares con NBI = (Hogares con NBI ÷ Hogares totales) × 100
+                </p>
+                <p>
+                    El NBI es un indicador que busca captar dimensiones de la pobreza estructural a partir de un conjunto de indicadores simples sobre las condiciones de vida de los hogares: hacinamiento, vivienda precaria, falta de baño, inasistencia escolar y capacidad de subsistencia.
                 </p>
                 
                 <h3 id="datos-diputados">Diputados nacionales</h3>
                 <p>
-                    Esta variable estima cuántos diputados nacionales le corresponderían a cada división propuesta según dos métodos alternativos, seleccionables mediante un botón gris en el encabezado de la columna:
+                    Esta variable estima cuántos diputados nacionales le corresponderían a cada división o provincia según dos métodos alternativos, seleccionables mediante un botón gris en el encabezado de la columna:
                 </p>
                 <ul>
                     <li><strong>Cantidad actual:</strong> refleja el reparto vigente, con un total de 70 diputados para la Provincia de Buenos Aires y 25 para la Ciudad Autónoma de Buenos Aires. Los escaños se distribuyen proporcionalmente a la población de cada división dentro de su jurisdicción (PBA o CABA), usando el método del mayor resto para garantizar que las sumas totales sean exactamente 70 y 25. Una división que combine departamentos de PBA y comunas de CABA recibe la suma de ambas asignaciones.</li>
-                    <li><strong>Según Decreto-ley 22847:</strong> aplica la fórmula del <strong>Decreto-ley N° 22.847/1983</strong>, que establece <em>1 diputado por cada 161.000 habitantes o fracción mayor a 80.500 habitantes</em>. A esa base se le suman <strong>3 diputados</strong> adicionales por división, y se garantiza un <strong>mínimo de 5 diputados</strong> por división.</li>
+                    <li><strong>Según Decreto-ley 22847:</strong> aplica la fórmula del <strong>Decreto-ley N° 22.847/1983</strong>, que establece <em>1 diputado por cada 161.000 habitantes o fracción mayor a 80.500 habitantes</em>. A esa base se le suman <strong>3 diputados</strong> adicionales por división o provincia, y se garantiza un <strong>mínimo de 5 diputados</strong>.</li>
                 </ul>
                 <p>
                     <strong>Aclaración:</strong> el Decreto-ley 22.847 fue dictado por el entonces presidente de facto <strong>Reynaldo Bignone</strong> en 1983. Si bien la fórmula original permitiría ajustar la cantidad de diputados nacionales, <strong>desde la vuelta de la democracia en 1983 no se ha realizado ninguna actualización</strong> del número total de diputados nacionales. La cantidad actual (257 diputados en total) permanece sin modificaciones desde entonces, lo que genera distorsiones en la representación demográfica de las provincias. Podés consultar el texto original del decreto-ley <a href="https://www.argentina.gob.ar/normativa/nacional/norma-195989/texto" target="_blank" rel="noopener">acá</a> y un análisis de sus implicancias y su historia <a href="https://doi.org/10.13140/RG.2.2.32565.23523" target="_blank" rel="noopener">acá</a>.
@@ -261,10 +275,13 @@
                 
                 <h3 id="datos-otras-provincias">Otras provincias</h3>
                 <p>
-                    El botón <strong>"Incluir otras provincias"</strong>, ubicado arriba de la tabla comparativa, agrega filas adicionales con los valores de cada provincia argentina (excluyendo la Provincia de Buenos Aires y la Ciudad Autónoma de Buenos Aires, esta última no es provincia). Esto permite comparar las divisiones propuestas con las jurisdicciones provinciales existentes.
+                    La tabla comparativa siempre muestra dos filas fijas correspondientes a la <strong>Provincia de Buenos Aires</strong> y a la <strong>Ciudad Autónoma de Buenos Aires</strong> como entidades enteras. Estas filas aparecen con fondo negro, texto blanco y tachado para indicar que representan las jurisdicciones existentes en su totalidad, y permiten comparar las divisiones propuestas con el territorio sin dividir.
                 </p>
                 <p>
-                    <em>Nota: el archivo <code>datos_provincias.json</code> aún no está cargado. Cuando esté disponible, se completarán las filas correspondientes.</em>
+                    El botón <strong>"Incluir otras provincias"</strong>, ubicado arriba de la tabla comparativa, agrega además las restantes 22 provincias argentinas (excluyendo PBA y CABA). Esto permite comparar las divisiones propuestas con todas las jurisdicciones provinciales del país.
+                </p>
+                <p>
+                    <strong>Fuentes:</strong> INDEC (población y hogares, Censo 2022); IGN (superficie, Tabla 12); CEPAL (PBG, desagregación provincial del VAB).
                 </p>
                 
                 <h3 id="datos-regionalizaciones">Regionalizaciones existentes</h3>
