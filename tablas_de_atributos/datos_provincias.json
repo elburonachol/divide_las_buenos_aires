@@ -1,0 +1,285 @@
+{
+  "metadata": {
+    "ultima_actualizacion": "2026-09-29",
+    "elaboracion": "Datos procesados para mapa interactivo de división provincial",
+    "version_estructura": "1.3",
+    "fuentes_principales": [
+      "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022. Resultados definitivos.",
+      "Instituto Geográfico Nacional (IGN): Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina. Tabla 12: Valores poblacionales proyectados al año 2020 y de superficie correspondientes a las provincias de la República Argentina, pág. 25.",
+      "Comisión Económica para América Latina y el Caribe (CEPAL). Desagregación provincial del valor agregado bruto de la Argentina, base 2004. Datos 2022."
+    ],
+    "nota": "Los datos de población, superficie y hogares corresponden al Censo 2022. El PBG está expresado en millones de pesos constantes de 2004."
+  },
+  "variables": {
+    "cde": {
+      "nombre": "Código de Provincia",
+      "tipo": "texto",
+      "descripcion": "Código único identificador de la provincia (INDEC)",
+      "operacion": "no_aplica"
+    },
+    "nombre_provincia": {
+      "nombre": "Nombre de la Provincia",
+      "tipo": "texto",
+      "descripcion": "Nombre oficial de la provincia",
+      "operacion": "no_aplica"
+    },
+    "superficie": {
+      "nombre": "Superficie",
+      "tipo": "decimal",
+      "unidad": "km²",
+      "descripcion": "Superficie de la provincia en kilómetros cuadrados. Fuente: IGN, Tabla 12, pág. 25.",
+      "operacion": "suma",
+      "fuente": "Instituto Geográfico Nacional (IGN) - Tabla 12"
+    },
+    "poblacion_total": {
+      "nombre": "Población Total",
+      "tipo": "entero",
+      "unidad": "personas",
+      "descripcion": "Población total según Censo 2022.",
+      "operacion": "suma",
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
+    },
+    "pbg": {
+      "nombre": "Producto Bruto Geográfico",
+      "tipo": "decimal",
+      "unidad": "millones de pesos constantes de 2004",
+      "descripcion": "Producto Bruto Geográfico de la provincia, expresado en millones de pesos constantes de 2004. Fuente: CEPAL, Desagregación provincial del VAB (base 2004), datos 2022.",
+      "operacion": "suma",
+      "fuente": "CEPAL - Desagregación provincial del VAB"
+    },
+    "hogares_nbi": {
+      "nombre": "Hogares con NBI",
+      "tipo": "entero",
+      "unidad": "hogares",
+      "descripcion": "Cantidad de hogares con Necesidades Básicas Insatisfechas (NBI). Fuente: INDEC, Censo 2022.",
+      "operacion": "suma",
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
+    },
+    "hogares_total": {
+      "nombre": "Hogares totales",
+      "tipo": "entero",
+      "unidad": "hogares",
+      "descripcion": "Cantidad total de hogares. Fuente: INDEC, Censo 2022.",
+      "operacion": "suma",
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
+    }
+  },
+  "datos": {
+    "2": {
+      "cde": "2",
+      "nombre_provincia": "Ciudad Autónoma de Buenos Aires",
+      "superficie": 205.9,
+      "poblacion_total": 3121707,
+      "pbg": 119005.57,
+      "hogares_nbi": 66855,
+      "hogares_total": 1406735
+    },
+    "6": {
+      "cde": "6",
+      "nombre_provincia": "Buenos Aires",
+      "superficie": 305907.4,
+      "poblacion_total": 17523996,
+      "pbg": 196508.69,
+      "hogares_nbi": 384245,
+      "hogares_total": 6051550
+    },
+    "10": {
+      "cde": "10",
+      "nombre_provincia": "Catamarca",
+      "superficie": 101486.1,
+      "poblacion_total": 429562,
+      "pbg": 3822.78,
+      "hogares_nbi": 9302,
+      "hogares_total": 135153
+    },
+    "22": {
+      "cde": "22",
+      "nombre_provincia": "Chaco",
+      "superficie": 99763.3,
+      "poblacion_total": 1129606,
+      "pbg": 9739.43,
+      "hogares_nbi": 42014,
+      "hogares_total": 374487
+    },
+    "26": {
+      "cde": "26",
+      "nombre_provincia": "Chubut",
+      "superficie": 224302.3,
+      "poblacion_total": 592621,
+      "pbg": 11501.76,
+      "hogares_nbi": 11070,
+      "hogares_total": 215257
+    },
+    "14": {
+      "cde": "14",
+      "nombre_provincia": "Córdoba",
+      "superficie": 164707.8,
+      "poblacion_total": 3840905,
+      "pbg": 51702.63,
+      "hogares_nbi": 60504,
+      "hogares_total": 1394400
+    },
+    "18": {
+      "cde": "18",
+      "nombre_provincia": "Corrientes",
+      "superficie": 89123.3,
+      "poblacion_total": 1212696,
+      "pbg": 7697.06,
+      "hogares_nbi": 44745,
+      "hogares_total": 379129
+    },
+    "30": {
+      "cde": "30",
+      "nombre_provincia": "Entre Ríos",
+      "superficie": 78383.7,
+      "poblacion_total": 1425578,
+      "pbg": 16833.72,
+      "hogares_nbi": 30252,
+      "hogares_total": 500660
+    },
+    "34": {
+      "cde": "34",
+      "nombre_provincia": "Formosa",
+      "superficie": 75488.3,
+      "poblacion_total": 607419,
+      "pbg": 3605.8,
+      "hogares_nbi": 23118,
+      "hogares_total": 198206
+    },
+    "38": {
+      "cde": "38",
+      "nombre_provincia": "Jujuy",
+      "superficie": 53244.2,
+      "poblacion_total": 811611,
+      "pbg": 6528.86,
+      "hogares_nbi": 26726,
+      "hogares_total": 245706
+    },
+    "42": {
+      "cde": "42",
+      "nombre_provincia": "La Pampa",
+      "superficie": 143492.5,
+      "poblacion_total": 361859,
+      "pbg": 6448.56,
+      "hogares_nbi": 3731,
+      "hogares_total": 141573
+    },
+    "46": {
+      "cde": "46",
+      "nombre_provincia": "La Rioja",
+      "superficie": 91493.7,
+      "poblacion_total": 383865,
+      "pbg": 3480.58,
+      "hogares_nbi": 10158,
+      "hogares_total": 126256
+    },
+    "50": {
+      "cde": "50",
+      "nombre_provincia": "Mendoza",
+      "superficie": 149069.2,
+      "poblacion_total": 2043540,
+      "pbg": 19870.11,
+      "hogares_nbi": 41825,
+      "hogares_total": 652184
+    },
+    "54": {
+      "cde": "54",
+      "nombre_provincia": "Misiones",
+      "superficie": 29911.4,
+      "poblacion_total": 1278873,
+      "pbg": 8042.84,
+      "hogares_nbi": 37163,
+      "hogares_total": 425667
+    },
+    "58": {
+      "cde": "58",
+      "nombre_provincia": "Neuquén",
+      "superficie": 94422.0,
+      "poblacion_total": 710814,
+      "pbg": 20644.77,
+      "hogares_nbi": 17048,
+      "hogares_total": 257381
+    },
+    "62": {
+      "cde": "62",
+      "nombre_provincia": "Río Negro",
+      "superficie": 202168.6,
+      "poblacion_total": 750768,
+      "pbg": 8519.55,
+      "hogares_nbi": 16447,
+      "hogares_total": 278935
+    },
+    "66": {
+      "cde": "66",
+      "nombre_provincia": "Salta",
+      "superficie": 155340.5,
+      "poblacion_total": 1441351,
+      "pbg": 11115.29,
+      "hogares_nbi": 59579,
+      "hogares_total": 418430
+    },
+    "70": {
+      "cde": "70",
+      "nombre_provincia": "San Juan",
+      "superficie": 88296.2,
+      "poblacion_total": 822853,
+      "pbg": 7867.46,
+      "hogares_nbi": 19971,
+      "hogares_total": 247094
+    },
+    "74": {
+      "cde": "74",
+      "nombre_provincia": "San Luis",
+      "superficie": 75347.1,
+      "poblacion_total": 542069,
+      "pbg": 6238.59,
+      "hogares_nbi": 12092,
+      "hogares_total": 185549
+    },
+    "78": {
+      "cde": "78",
+      "nombre_provincia": "Santa Cruz",
+      "superficie": 244457.5,
+      "poblacion_total": 337226,
+      "pbg": 8355.64,
+      "hogares_nbi": 7123,
+      "hogares_total": 119262
+    },
+    "82": {
+      "cde": "82",
+      "nombre_provincia": "Santa Fe",
+      "superficie": 133249.1,
+      "poblacion_total": 3544908,
+      "pbg": 48267.79,
+      "hogares_nbi": 63133,
+      "hogares_total": 1289967
+    },
+    "86": {
+      "cde": "86",
+      "nombre_provincia": "Santiago del Estero",
+      "superficie": 136934.3,
+      "poblacion_total": 1060906,
+      "pbg": 10959.12,
+      "hogares_nbi": 30269,
+      "hogares_total": 316992
+    },
+    "94": {
+      "cde": "94",
+      "nombre_provincia": "Tierra del Fuego, AeIAS",
+      "superficie": 910324.4,
+      "poblacion_total": 185732,
+      "pbg": 5859.76,
+      "hogares_nbi": 8850,
+      "hogares_total": 66187
+    },
+    "90": {
+      "cde": "90",
+      "nombre_provincia": "Tucumán",
+      "superficie": 22592.1,
+      "poblacion_total": 1731820,
+      "pbg": 11887.77,
+      "hogares_nbi": 48073,
+      "hogares_total": 505542
+    }
+  }
+}
