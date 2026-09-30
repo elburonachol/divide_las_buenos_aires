@@ -368,18 +368,6 @@ function loadDatosProvincias() {
         });
 }
 
-/**
- * CALCULA EL PBG PER CÁPITA DE UNA DIVISIÓN
- * Devuelve PBG (miles de $) / población (habitantes) = miles de $ por habitante
- */
-function calcularPbgPerCapitaDivision(grupoId) {
-    const pbg = calcularTotalDivision(grupoId, 'pbg');
-    const poblacion = calcularTotalDivision(grupoId, 'poblacion_total');
-    if (poblacion > 0 && pbg > 0) {
-        return pbg / poblacion;
-    }
-    return 0;
-}
 
 /**
  * CALCULA LA POBLACIÓN DE UNA DIVISIÓN SEPARADA POR JURISDICCIÓN
@@ -498,14 +486,111 @@ function distribuirPorMayorResto(valores, total) {
 }
 
 /**
- * DEVUELVE LA LISTA DE PROVINCIAS ARGENTINAS (EXCLUYENDO PBA)
- * CABA no es provincia, por eso no figura.
+ * DEVUELVE LAS PROVINCIAS "COMPLETAS" QUE SIEMPRE SE MUESTRAN EN LA TABLA
+ * Estas son la Provincia de Buenos Aires (cde "6") y la Ciudad Autónoma
+ * de Buenos Aires (cde "2"). Se muestran siempre, sin importar el toggle.
+ * @returns {Array} - Lista de {cde, nombre, info}
+ */
+function getProvinciasCompletas() {
+    if (!datosProvincias || !datosProvincias.datos) return [];
+    const codes = ['6', '2'];  // PBA primero, CABA después
+    return codes
+        .filter(c => datosProvincias.datos[c])
+        .map(cde => ({
+            cde: cde,
+            nombre: datosProvincias.datos[cde].nombre_provincia || `Provincia ${cde}`,
+            info: datosProvincias.datos[cde]
+        }));
+}
+
+/**
+ * DEVUELVE LAS OTRAS PROVINCIAS ARGENTINAS (excluyendo PBA y CABA)
+ * Se muestran sólo cuando el toggle "Incluir otras provincias" está activo.
+ * @returns {Array} - Lista de {cde, nombre, info}
  */
 function getProvinciasArgentinas() {
-    return [
-        'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos',
-        'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones',
-        'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz',
-        'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'
-    ];
+    if (!datosProvincias || !datosProvincias.datos) return [];
+    const excluir = new Set(['2', '6']);  // CABA y PBA
+    return Object.entries(datosProvincias.datos)
+        .filter(([cde]) => !excluir.has(cde))
+        .map(([cde, info]) => ({
+            cde: cde,
+            nombre: info.nombre_provincia || `Provincia ${cde}`,
+            info: info
+        }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+// =============================================
+// CÁLCULOS ADICIONALES PARA LA TABLA COMPARATIVA
+// =============================================
+
+/**
+ * CALCULA EL PORCENTAJE DE HOGARES CON NBI EN UNA DIVISIÓN
+ * Fórmula: (suma hogares_nbi / suma hogares_total) * 100
+ * @param {number} grupoId - ID de la división
+ * @returns {number} - Porcentaje (0-100)
+ */
+function calcularPorcentajeNbiDivision(grupoId) {
+    const nbi = calcularTotalDivision(grupoId, 'hogares_nbi');
+    const total = calcularTotalDivision(grupoId, 'hogares_total');
+    if (total > 0) return (nbi / total) * 100;
+    return 0;
+}
+
+/**
+ * CALCULA EL PBG PER CÁPITA DE UNA DIVISIÓN EN PESOS CONSTANTES DE 2004
+ * El PBG está almacenado en millones de pesos, así que multiplicamos
+ * por 1.000.000 antes de dividir por la población para obtener el
+ * resultado en pesos por habitante (evita valores tipo 0,2).
+ * @param {number} grupoId - ID de la división
+ * @returns {number} - PBG per cápita en pesos constantes de 2004 por habitante
+ */
+function calcularPbgPerCapitaDivision(grupoId) {
+    const pbg = calcularTotalDivision(grupoId, 'pbg');       // millones de $
+    const poblacion = calcularTotalDivision(grupoId, 'poblacion_total');
+    if (poblacion > 0 && pbg > 0) {
+        return (pbg * 1000000) / poblacion;                  // $ por habitante
+    }
+    return 0;
+}
+
+/**
+ * CALCULA EL PORCENTAJE DE HOGARES CON NBI PARA UNA PROVINCIA
+ * a partir de un objeto info con hogares_nbi y hogares_total.
+ * @param {Object} info - Objeto con {hogares_nbi, hogares_total}
+ * @returns {number} - Porcentaje (0-100)
+ */
+function calcularPorcentajeNbiProvincia(info) {
+    if (!info || !info.hogares_total) return 0;
+    return (info.hogares_nbi / info.hogares_total) * 100;
+}
+
+/**
+ * CALCULA EL PBG PER CÁPITA DE UNA PROVINCIA EN PESOS CONSTANTES DE 2004
+ * @param {Object} info - Objeto con {pbg, poblacion_total}
+ * @returns {number} - PBG per cápita en pesos de 2004 por habitante
+ */
+function calcularPbgPerCapitaProvincia(info) {
+    if (!info || !info.poblacion_total || !info.pbg) return 0;
+    return (info.pbg * 1000000) / info.poblacion_total;
+}
+
+/**
+ * DEVUELVE LA CANTIDAD DE DIPUTADOS DE UNA PROVINCIA SEGÚN EL MÉTODO
+ * Para PBA y CABA hay valores conocidos; para el resto se aplica el
+ * Decreto-ley 22847 cuando corresponde.
+ * @param {Object} info - Objeto con {poblacion_total}
+ * @param {string} cde - Código CDE de la provincia
+ * @param {string} metodo - 'actual' o 'decreto'
+ * @returns {number|string} - Cantidad o '—'
+ */
+function calcularDiputadosProvincia(info, cde, metodo) {
+    if (metodo === 'decreto') {
+        return calcularDiputadosDecreto(info.poblacion_total);
+    }
+    // Método actual: cantidades fijas para PBA y CABA
+    if (cde === '6') return 70;   // Provincia de Buenos Aires
+    if (cde === '2') return 25;   // Ciudad Autónoma de Buenos Aires
+    return '—';
 }
