@@ -7,6 +7,8 @@
  * - Alternancia PBG total / PBG per cápita
  * - Alternancia método de diputados: cantidad actual / Decreto-ley 22847
  * - Inclusión opcional de otras provincias argentinas
+ * - Fila fija (fondo negro, texto blanco, tachado) para PBA y CABA
+ * - Cálculo de porcentaje de hogares con NBI
  */
 
 // =============================================
@@ -242,15 +244,18 @@ function createDiputadosHeaderCell() {
 /**
  * CREA UNA CELDA DE DATO NUMÉRICO
  */
-function createValueCell(value, decimals) {
+function createValueCell(value, decimals, options) {
+    options = options || {};
     const td = document.createElement('td');
     td.style.textAlign = 'right';
+    
     if (value === '—' || value === null || value === undefined) {
         td.textContent = '—';
         td.style.textAlign = 'center';
         td.style.color = '#999';
     } else if (typeof value === 'number') {
         td.textContent = formatearNumero(value, decimals);
+        if (options.suffix) td.textContent += ' ' + options.suffix;
     } else {
         td.textContent = value;
     }
@@ -259,15 +264,23 @@ function createValueCell(value, decimals) {
 
 /**
  * CREA UNA FILA COMPLETA DE DATOS
+ * @param {Object} row - Objeto con {type, name, color, values}
+ *   type: 'division' | 'province' | 'fullProvince'
  */
 function createDataRow(row) {
     const tr = document.createElement('tr');
+    const isFullProvince = row.type === 'fullProvince';
     
     // Columna 1: nombre de la división / provincia
     const tdName = document.createElement('td');
     tdName.textContent = row.name;
     tdName.style.fontWeight = '600';
-    if (row.type === 'division') {
+    
+    if (isFullProvince) {
+        // Fila especial: fondo negro, texto blanco, tachado
+        tdName.style.backgroundColor = '#000';
+        tdName.style.color = '#fff';
+    } else if (row.type === 'division') {
         tdName.style.backgroundColor = row.color;
         tdName.style.color = getContrastColor(row.color);
     } else {
@@ -286,10 +299,12 @@ function createDataRow(row) {
     tr.appendChild(createValueCell(row.values.densidad, 2));
     // PBG (total o per cápita)
     if (pbgPerCapita) {
-        tr.appendChild(createValueCell(row.values.pbg_percapita, 2));
+        tr.appendChild(createValueCell(row.values.pbg_percapita));
     } else {
         tr.appendChild(createValueCell(row.values.pbg));
     }
+    // % Hogares NBI (2 decimales)
+    tr.appendChild(createValueCell(row.values.nbi, 2, { suffix: '%' }));
     // Diputados nacionales
     tr.appendChild(createValueCell(row.values.diputados));
     // Posibles capitales (placeholder)
@@ -300,6 +315,18 @@ function createDataRow(row) {
     if (row.values.capitales === '—') tdCap.style.color = '#999';
     tr.appendChild(tdCap);
     
+    // Aplicar estilos de "fila entera tachada" si es provincia completa
+    if (isFullProvince) {
+        tr.style.backgroundColor = '#000';
+        tr.style.color = '#fff';
+        tr.style.textDecoration = 'line-through';
+        tr.querySelectorAll('td').forEach(td => {
+            td.style.backgroundColor = '#000';
+            td.style.color = '#fff';
+            td.style.textDecoration = 'line-through';
+        });
+    }
+    
     return tr;
 }
 
@@ -309,7 +336,7 @@ function createDataRow(row) {
 
 /**
  * ACTUALIZA LA TABLA COMPARATIVA CON LOS DATOS ACTUALES
- * Filas: divisiones (y provincias si el toggle está activo)
+ * Filas: divisiones + PBA + CABA (+ otras provincias si el toggle está activo)
  * Columnas: variables
  */
 function updateComparisonTable() {
@@ -326,7 +353,7 @@ function updateComparisonTable() {
     const headerRow = document.createElement('tr');
     
     const thName = document.createElement('th');
-    thName.textContent = 'División';
+    thName.textContent = 'División / Provincia';
     thName.style.minWidth = '150px';
     headerRow.appendChild(thName);
     
@@ -335,6 +362,7 @@ function updateComparisonTable() {
     headerRow.appendChild(createHeaderCell('Población total', 'poblacion_total', 'datos-poblacion'));
     headerRow.appendChild(createHeaderCell('Densidad (hab/km²)', 'densidad', 'datos-densidad'));
     headerRow.appendChild(createPbgHeaderCell());
+    headerRow.appendChild(createHeaderCell('Hogares con NBI (%)', 'nbi', 'datos-nbi'));
     headerRow.appendChild(createDiputadosHeaderCell());
     
     const thCap = document.createElement('th');
@@ -349,7 +377,7 @@ function updateComparisonTable() {
     if (!partidosData || !partidosData.datos) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.textContent = 'Cargando datos de superficie y población...';
         td.style.textAlign = 'center';
         td.style.fontStyle = 'italic';
@@ -364,6 +392,8 @@ function updateComparisonTable() {
     
     // Construir array de filas
     const rows = [];
+    
+    // --- Divisiones propuestas ---
     for (let i = 1; i <= currentDivisionCount; i++) {
         rows.push({
             type: 'division',
@@ -377,32 +407,57 @@ function updateComparisonTable() {
                 densidad: calcularDensidadDivision(i),
                 pbg: calcularTotalDivision(i, 'pbg'),
                 pbg_percapita: calcularPbgPerCapitaDivision(i),
+                nbi: calcularPorcentajeNbiDivision(i),
                 diputados: (diputadosMap[i] !== undefined) ? diputadosMap[i] : 0,
                 capitales: '—'  // Placeholder: se completará cuando existan los datos
             }
         });
     }
     
-    // Filas de otras provincias (si corresponde)
+    // --- PBA y CABA (siempre visibles, fila destacada) ---
+    const provinciasCompletas = getProvinciasCompletas();
+    provinciasCompletas.forEach(p => {
+        const info = p.info;
+        rows.push({
+            type: 'fullProvince',
+            cde: p.cde,
+            name: p.nombre,
+            values: {
+                cantidad: '—',
+                superficie: info.superficie,
+                poblacion_total: info.poblacion_total,
+                densidad: (info.superficie > 0)
+                    ? info.poblacion_total / info.superficie
+                    : '—',
+                pbg: info.pbg,
+                pbg_percapita: calcularPbgPerCapitaProvincia(info),
+                nbi: calcularPorcentajeNbiProvincia(info),
+                diputados: calcularDiputadosProvincia(info, p.cde, diputadosMethod),
+                capitales: '—'
+            }
+        });
+    });
+    
+    // --- Otras provincias (si el toggle está activo) ---
     if (includeOtherProvinces) {
         const provincias = getProvinciasArgentinas();
-        provincias.forEach(nombre => {
-            const datos = (datosProvincias && datosProvincias.datos && datosProvincias.datos[nombre]) || null;
+        provincias.forEach(p => {
+            const info = p.info;
             rows.push({
                 type: 'province',
-                name: nombre,
+                cde: p.cde,
+                name: p.nombre,
                 values: {
                     cantidad: '—',
-                    superficie: datos ? datos.superficie : '—',
-                    poblacion_total: datos ? datos.poblacion_total : '—',
-                    densidad: (datos && datos.superficie > 0)
-                        ? datos.poblacion_total / datos.superficie
+                    superficie: info.superficie,
+                    poblacion_total: info.poblacion_total,
+                    densidad: (info.superficie > 0)
+                        ? info.poblacion_total / info.superficie
                         : '—',
-                    pbg: datos ? datos.pbg : '—',
-                    pbg_percapita: (datos && datos.poblacion_total > 0 && datos.pbg)
-                        ? datos.pbg / datos.poblacion_total
-                        : '—',
-                    diputados: '—',
+                    pbg: info.pbg,
+                    pbg_percapita: calcularPbgPerCapitaProvincia(info),
+                    nbi: calcularPorcentajeNbiProvincia(info),
+                    diputados: calcularDiputadosProvincia(info, p.cde, diputadosMethod),
                     capitales: '—'
                 }
             });
