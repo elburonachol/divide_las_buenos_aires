@@ -207,6 +207,20 @@ function initializeFooterModals() {
             navigateTo('/privacidad', () => openFullModal('privacy-modal'));
         });
     }
+
+    // Handler para links internos a /contacto (evita recargar la página)
+    document.addEventListener('click', function(e) {
+        const contactoLink = e.target.closest('a[href="/contacto"]');
+        if (!contactoLink) return;
+        e.preventDefault();
+        // Cerrar modales si están abiertos
+        closeFullModal('faq-modal');
+        closeFullModal('terms-modal');
+        closeFullModal('privacy-modal');
+        history.pushState({}, '', '/contacto');
+        activateTab('contacto');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     
     // Botones de cierre
     const faqClose = document.getElementById('faq-modal-close');
