@@ -602,17 +602,7 @@ function showSaveDraftModal() {
         sendBtn.textContent = 'Enviar enlace de acceso';
 
         if (success) {
-            // Mostrar mensaje de éxito
-            modal.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <span style="font-size: 40px;">📧</span>
-                    <h3 style="margin: 10px 0;">Revisá tu correo</h3>
-                    <p style="color: #666; font-size: 14px;">
-                        Te enviamos un enlace a <strong>${email}</strong>.
-                        Hacé clic en el enlace para acceder y guardar tu propuesta.
-                    </p>
-                </div>
-            `;
+            modal.innerHTML = getMagicLinkSentHTML(email, 'acceder y guardar tu propuesta');
         } else {
             showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
         }
@@ -847,7 +837,7 @@ function showAccessDraftModal() {
                 cursor: pointer;
                 color: #999;
             ">×</button>
-            <h3 style="margin-top: 0; color: #333;">Acceder a mi propuesta borrador</h3>
+            <h3 style="margin-top: 0; color: #333;">Cargar mi propuesta</h3>
             <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
                 Ingresá tu correo electrónico para recibir un enlace de acceso.
             </p>
@@ -905,16 +895,7 @@ function showAccessDraftModal() {
         sendBtn.textContent = 'Enviar enlace de acceso';
 
         if (success) {
-            modal.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <span style="font-size: 40px;">📧</span>
-                    <h3 style="margin: 10px 0;">Revisá tu correo</h3>
-                    <p style="color: #666; font-size: 14px;">
-                        Te enviamos un enlace a <strong>${email}</strong>.
-                        Hacé clic en el enlace para acceder a tu propuesta.
-                    </p>
-                </div>
-            `;
+            modal.innerHTML = getMagicLinkSentHTML(email, 'acceder a tu propuesta');
         } else {
             showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
         }
@@ -949,6 +930,70 @@ function showUnpublishModal() {
             }
         });
     }
+}
+
+// =============================================
+// PLANTILLA DE "MAGIC LINK ENVIADO"
+// =============================================
+
+/**
+ * DEVUELVE EL HTML DE LA PANTALLA "TE ENVIAMOS UN CORREO"
+ * Recrea visualmente el email de Supabase para dar instrucciones claras.
+ * @param {string} email - Correo del usuario
+ * @param {string} accion - Frase que describe la acción ("acceder a tu propuesta", etc.)
+ * @returns {string} - HTML de la pantalla
+ */
+function getMagicLinkSentHTML(email, accion) {
+    return `
+        <div style="max-width: 560px; margin: 0 auto;">
+            <p style="color: #333; font-size: 14px; line-height: 1.6; margin-bottom: 18px;">
+                Te enviamos un correo a <strong>${email}</strong> desde la casilla 
+                <strong>noreply@mail.app.supabase.io</strong>. Para ${accion}, 
+                hacé click en el texto "Sign In" del correo y te redirigirá a nuestro sitio.
+            </p>
+            
+            <!-- Recreación visual del email de Supabase -->
+            <div style="
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                overflow: hidden;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            ">
+                <div style="padding: 26px 30px; font-family: Helvetica, Arial, sans-serif; color: #333;">
+                    <h2 style="margin: 0 0 14px 0; font-size: 20px; font-weight: bold; color: #000;">Your sign-in link</h2>
+                    <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #333;">
+                        Follow the link below to sign in. This link expires shortly and can only be used once.
+                    </p>
+                    <div style="display: inline-block; border: 2px solid #d63384; border-radius: 4px; padding: 6px 14px; background: #fff;">
+                        <span style="font-size: 15px; color: #d63384; font-weight: 600;">Sign in</span>
+                    </div>
+                    <p style="margin: 40px 0 6px 0; text-align: center; font-size: 13px; color: #666;">
+                        You're receiving this email because you signed up for an application powered by 
+                        <span style="color: #3ecf8e; font-weight: 600;">Supabase</span>
+                        <span style="color: #f7b500;">⚡</span>
+                    </p>
+                    <p style="margin: 0; text-align: center; font-size: 12px; color: #888;">
+                        Opt out of these emails
+                    </p>
+                </div>
+            </div>
+            
+            <p style="color: #666; font-size: 12px; line-height: 1.6; margin-top: 18px;">
+                <strong>Importante:</strong> aunque hagas click en "Sign In", no vas a poder autenticarte correctamente en los siguientes casos:
+            </p>
+            <ul style="color: #666; font-size: 12px; line-height: 1.6; margin: 6px 0 0 18px; padding: 0;">
+                <li>Si el enlace <strong>ya fue usado anteriormente</strong> (los enlaces son de un solo uso).</li>
+                <li>Si <strong>expiró</strong> (los enlaces tienen una validez limitada de tiempo).</li>
+                <li>Si abriste el correo en un <strong>navegador distinto</strong> al que estás usando ahora para volver al sitio.</li>
+                <li>Si el correo que ingresaste <strong>no coincide</strong> con el de la casilla desde la que abriste el enlace.</li>
+                <li>Si tu proveedor de correo <strong>bloqueó o modificó</strong> el enlace (algunos filtros de spam lo hacen).</li>
+            </ul>
+            <p style="color: #666; font-size: 12px; line-height: 1.6; margin-top: 10px;">
+                Si tenés problemas, cerrá esta ventana y volvé a solicitar un nuevo enlace.
+            </p>
+        </div>
+    `;
 }
 
 // =============================================
