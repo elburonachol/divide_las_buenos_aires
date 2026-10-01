@@ -674,6 +674,7 @@ window.showAccessDraftModal = showAccessDraftModal;
 window.updateAuthUI = updateAuthUI;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
+window.setCurrentProposal = (p) => { currentProposal = p; };
 
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof updateAuthUI === 'function') {
