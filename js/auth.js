@@ -688,6 +688,11 @@ function showPublishModal() {
                 Mínimo 3 caracteres, máximo 40.
             </p>
             
+            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #666; margin-bottom: 15px; cursor: pointer;">
+                <input type="checkbox" id="publish-terms-check" style="margin-top: 2px;">
+                <span>Acepto los <a href="/terminos" id="publish-terms-link" style="color: #3388ff; text-decoration: underline;">términos y condiciones</a> del sitio</span>
+            </label>
+            
             <button id="publish-confirm" style="
                 background: #27ae60;
                 color: white;
@@ -745,11 +750,31 @@ function showPublishModal() {
 
     confirmBtn.addEventListener('click', async function() {
         const titulo = titleInput.value.trim();
+        const termsCheck = document.getElementById('publish-terms-check');
+        if (!termsCheck || !termsCheck.checked) {
+            showError('Debés aceptar los términos y condiciones para publicar tu propuesta.');
+            return;
+        }
         if (titulo.length < 3 || titulo.length > 40) {
             showError('El título debe tener entre 3 y 40 caracteres.');
             return;
         }
 
+        // Link a términos y condiciones dentro del modal
+        const termsLink = document.getElementById('publish-terms-link');
+        if (termsLink) {
+            termsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Cerrar el modal de publicar y abrir el de términos
+                if (modal.parentNode) modal.parentNode.removeChild(modal);
+                if (typeof navigateTo === 'function') {
+                    navigateTo('/terminos', () => openFullModal('terms-modal'));
+                } else {
+                    openFullModal('terms-modal');
+                }
+            });
+        }
+        
         proposal.titulo = titulo;
         
         confirmBtn.disabled = true;
