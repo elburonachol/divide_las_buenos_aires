@@ -1,113 +1,28 @@
 /*
- * MÓDULO DE AUTENTICACIÓN POR MAGIC LINK Y GESTIÓN DE PROPUESTAS
+ * MÓDULO DE AUTENTICACIÓN POR MAGIC LINK
  * 
  * Responsabilidades:
- * - Envío de magic link con redirección a propuesta específica
- * - Manejo de localStorage para propuestas de usuarios no autenticados
- * - Guardado de propuestas en Supabase (borrador y pública)
- * - Publicación de propuestas y generación de URL para compartir
- * - Gestión de modales de autenticación y publicación
+ * - Envío de magic links con redirección a propuesta específica
+ * - Creación y actualización del perfil del usuario
+ * - Detección del estado de autenticación (login/logout)
+ * - Aplicación de una propuesta guardada a la interfaz
+ * - Modales de autenticación: guardar borrador y cargar propuesta
+ * - Plantilla HTML de referencia del email de magic link
+ *
+ * DEPENDENCIAS:
+ * - supabase-client.js (cliente Supabase global)
+ * - proposals.js (serialización, guardado y carga de propuestas)
+ *
+ * ORDEN DE CARGA: después de supabase-client.js y antes de proposals.js.
  */
-
-// =============================================
-// CONFIGURACIÓN DEL CLIENTE SUPABASE
-// =============================================
-
-if (typeof window.SUPABASE_CONFIG === 'undefined') {
-    console.error('❌ SUPABASE_CONFIG no definido. Verificar build.js');
-}
-
-const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || '';
-const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || '';
-const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // =============================================
 // ESTADO DEL MÓDULO
 // =============================================
 
 let currentUser = null;
-let currentEmail = '';
 let currentProposal = null;
-const LOCAL_STORAGE_KEY = 'divide_las_ba_propuesta_pendiente';
-
-// =============================================
-// FUNCIONES DE PROPUESTA (SERIALIZACIÓN)
-// =============================================
-
-/**
- * SERIALIZA EL ESTADO ACTUAL DE LA PROPUESTA
- * Extrae toda la información relevante de las variables globales
- * @returns {Object} - Objeto con la propuesta serializada
- */
-function serializeProposal() {
-    const nombresDivisiones = [];
-    const departamentosPorDivision = {};
-    
-    for (let i = 1; i <= currentDivisionCount; i++) {
-        const group = departmentGroups[i];
-        if (group) {
-            nombresDivisiones.push(group.name || `División ${i}`);
-            departamentosPorDivision[i] = group.departments || [];
-        }
-    }
-    
-    // Departamentos que quedaron en el listado principal
-    const departamentosEnListado = [];
-    const listContainer = document.getElementById('all-departments-list');
-    if (listContainer) {
-        listContainer.querySelectorAll('.department-item').forEach(item => {
-            const nombre = item.getAttribute('data-dept-name');
-            if (nombre) departamentosEnListado.push(nombre);
-        });
-    }
-    
-    return {
-        titulo: '', // Se completa en el modal
-        incluye_comunas_caba: comunasIncluidas,
-        cantidad_divisiones: currentDivisionCount,
-        nombres_divisiones: nombresDivisiones,
-        departamentos_por_division: departamentosPorDivision,
-        departamentos_en_listado: departamentosEnListado
-    };
-}
-
-/**
- * GUARDA LA PROPUESTA EN LOCALSTORAGE
- * Se usa cuando el usuario no está autenticado
- */
-function saveProposalToLocalStorage(proposal) {
-    try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(proposal));
-        console.log('✅ Propuesta guardada en localStorage');
-    } catch (err) {
-        console.error('❌ Error al guardar en localStorage:', err);
-    }
-}
-
-/**
- * LEE LA PROPUESTA DESDE LOCALSTORAGE
- * @returns {Object|null} - Propuesta guardada o null
- */
-function loadProposalFromLocalStorage() {
-    try {
-        const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (data) {
-            console.log('✅ Propuesta recuperada de localStorage');
-            return JSON.parse(data);
-        }
-    } catch (err) {
-        console.error('❌ Error al leer localStorage:', err);
-    }
-    return null;
-}
-
-/**
- * ELIMINA LA PROPUESTA DE LOCALSTORAGE
- */
-function clearProposalFromLocalStorage() {
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
-    console.log('✅ Propuesta eliminada de localStorage');
-}
+let currentEmail = '';
 
 // =============================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -121,7 +36,6 @@ function clearProposalFromLocalStorage() {
  */
 async function sendMagicLink(email, redirectPath = '') {
     try {
-        // Construir URL de redirección con parámetro
         const baseUrl = window.location.origin + window.location.pathname;
         const redirectUrl = redirectPath 
             ? `${baseUrl}?redirect=${encodeURIComponent(redirectPath)}`
@@ -129,9 +43,7 @@ async function sendMagicLink(email, redirectPath = '') {
         
         const { data, error } = await supabaseClient.auth.signInWithOtp({
             email: email,
-            options: {
-                emailRedirectTo: redirectUrl
-            }
+            options: { emailRedirectTo: redirectUrl }
         });
 
         if (error) {
@@ -179,109 +91,10 @@ async function createOrUpdateProfile(user) {
     }
 }
 
-/**
- * GUARDA O ACTUALIZA LA PROPUESTA EN SUPABASE
- * @param {Object} proposalData - Datos de la propuesta
- * @param {boolean} esPublica - Si es pública o borrador
- * @returns {Promise<Object|null>} - Propuesta guardada o null
- */
-async function saveProposalToSupabase(proposalData, esPublica = false) {
-    if (!currentUser) {
-        console.error('❌ No hay usuario autenticado');
-        return null;
-    }
-
-    const dataToSave = {
-        user_id: currentUser.id,
-        titulo: proposalData.titulo || 'Mi propuesta',
-        es_publica: esPublica,
-        incluye_comunas_caba: proposalData.incluye_comunas_caba || false,
-        cantidad_divisiones: proposalData.cantidad_divisiones || 3,
-        nombres_divisiones: proposalData.nombres_divisiones || [],
-        departamentos_por_division: proposalData.departamentos_por_division || {},
-        departamentos_en_listado: proposalData.departamentos_en_listado || [],
-        updated_at: new Date().toISOString()
-    };
-
-    // Buscar si ya existe una propuesta del usuario
-    const { data: existing } = await supabaseClient
-        .from('proposals')
-        .select('id')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-    let result;
-    if (existing) {
-        // Actualizar
-        result = await supabaseClient
-            .from('proposals')
-            .update(dataToSave)
-            .eq('id', existing.id)
-            .select()
-            .single();
-    } else {
-        // Insertar
-        result = await supabaseClient
-            .from('proposals')
-            .insert([dataToSave])
-            .select()
-            .single();
-    }
-
-    if (result.error) {
-        console.error('❌ Error al guardar propuesta:', result.error);
-        return null;
-    }
-
-    console.log('✅ Propuesta guardada en Supabase');
-    return result.data;
-}
-
-/**
- * CARGA LA PROPUESTA DEL USUARIO AUTENTICADO
- * @returns {Promise<Object|null>} - Propuesta del usuario o null
- */
-async function loadUserProposal() {
-    if (!currentUser) return null;
-
-    const { data, error } = await supabaseClient
-        .from('proposals')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-    if (error) {
-        console.error('❌ Error al cargar propuesta:', error);
-        return null;
-    }
-
-    return data;
-}
-
-/**
- * CARGA UNA PROPUESTA PÚBLICA POR user_share_code
- * @param {string} shareCode - Código de usuario
- * @returns {Promise<Object|null>} - Propuesta pública o null
- */
-async function loadPublicProposal(shareCode) {
-    const { data, error } = await supabaseClient
-        .rpc('get_proposal_by_share_code', { share_code: shareCode });
-
-    if (error) {
-        console.error('❌ Error al cargar propuesta pública:', error);
-        return null;
-    }
-
-    return data && data.length > 0 ? data[0] : null;
-}
-
 // =============================================
 // DETECCIÓN DE SESIÓN Y REDIRECCIÓN
 // =============================================
 
-/**
- * ESCUCHA CAMBIOS EN EL ESTADO DE AUTENTICACIÓN
- */
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     console.log('🔐 Auth state change:', event);
     
@@ -289,7 +102,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         currentUser = session.user;
         await createOrUpdateProfile(session.user);
         
-        // Verificar si hay una propuesta pendiente en localStorage
+        // Recuperar propuesta pendiente en localStorage (definida en proposals.js)
         const pendingProposal = loadProposalFromLocalStorage();
         if (pendingProposal) {
             await saveProposalToSupabase(pendingProposal, false);
@@ -297,24 +110,20 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
             console.log('✅ Propuesta pendiente guardada en Supabase');
         }
         
-        // Cargar la propuesta del usuario SIEMPRE, antes de cualquier redirección
+        // Cargar la propuesta del usuario
         currentProposal = await loadUserProposal();
         if (currentProposal) {
             applyProposalToUI(currentProposal);
         }
         
-        // Actualizar la interfaz
         updateAuthUI();
 
-        // Verificar si hay un parámetro de redirección y actuar en consecuencia
+        // Redirección post-login (por si venía un ?redirect=...)
         const urlParams = new URLSearchParams(window.location.search);
         const redirectPath = urlParams.get('redirect');
-        
         if (redirectPath) {
-            // Limpiar el parámetro de la URL y redirigir
             const cleanUrl = window.location.origin + window.location.pathname;
             history.replaceState(null, '', cleanUrl);
-            // Redirigir después de un pequeño delay para que la UI se actualice
             setTimeout(() => {
                 window.location.href = cleanUrl + redirectPath;
             }, 500);
@@ -327,6 +136,10 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
+// =============================================
+// APLICACIÓN DE PROPUESTA A LA INTERFAZ
+// =============================================
+
 /**
  * APLICA UNA PROPUESTA GUARDADA A LA INTERFAZ DE USUARIO
  * Toma los datos de la propuesta y actualiza el estado global y la UI.
@@ -336,7 +149,6 @@ function applyProposalToUI(proposal) {
     if (!proposal) return;
 
     // Si los datos base aún no están cargados, encolar la propuesta
-    // y dejar que main.js la aplique cuando termine de cargar todo
     if (!allDepartments || allDepartments.length === 0) {
         console.log('⏳ Datos aún no cargados. Encolando propuesta para aplicar después.');
         window.__pendingProposal = proposal;
@@ -357,30 +169,28 @@ function applyProposalToUI(proposal) {
     comunasIncluidas = proposal.incluye_comunas_caba || false;
     
     // 3. Reconstruir las cajas de división
-    //    initializeDivisionBoxes limpiará el contenedor y creará las cajas.
     initializeDivisionBoxes(currentDivisionCount);
 
-    // 4. Asignar nombres y departamentos a cada división
+    // 4. Asignar nombres a cada división
     if (proposal.nombres_divisiones && Array.isArray(proposal.nombres_divisiones)) {
         proposal.nombres_divisiones.forEach((nombre, index) => {
             const groupId = index + 1;
             if (departmentGroups[groupId]) {
                 departmentGroups[groupId].name = nombre;
-                // Actualizar el input/editable en la UI
                 const editableName = document.querySelector(`[data-group-id="${groupId}"] .editable-division-name`);
                 if (editableName) editableName.textContent = nombre;
             }
         });
     }
 
-    // 5. Asignar los departamentos a sus divisiones correspondientes
+    // 5. Asignar departamentos a sus divisiones
     if (proposal.departamentos_por_division) {
         Object.keys(proposal.departamentos_por_division).forEach(groupId => {
             const deptNames = proposal.departamentos_por_division[groupId];
             if (departmentGroups[groupId] && Array.isArray(deptNames)) {
                 const divisionList = document.getElementById(`division-${groupId}`);
                 if (divisionList) {
-                    divisionList.innerHTML = ''; // Limpiar por si acaso
+                    divisionList.innerHTML = '';
                     deptNames.forEach(deptName => {
                         const dept = allDepartments.find(d => d.properties.nam === deptName);
                         if (dept) {
@@ -393,24 +203,21 @@ function applyProposalToUI(proposal) {
                             divisionList.appendChild(item);
                         }
                     });
-                    // Ordenar alfabéticamente dentro de la división
                     sortDivisionList(groupId);
                 }
             }
         });
     }
 
-    // 6. Reconstruir el listado principal con los departamentos no asignados
+    // 6. Reconstruir el listado principal
     const listContainer = document.getElementById('all-departments-list');
     if (listContainer) {
         listContainer.innerHTML = '';
-        // Recopilar todos los departamentos asignados
         const assignedDepts = new Set();
         Object.values(proposal.departamentos_por_division || {}).forEach(depts => {
             depts.forEach(name => assignedDepts.add(name));
         });
 
-        // Poblar el listado con los que no están asignados
         allDepartments.forEach(feature => {
             const name = feature.properties.nam;
             if (!assignedDepts.has(name)) {
@@ -426,21 +233,14 @@ function applyProposalToUI(proposal) {
         sortMainList();
     }
 
-    // 7. Sincronizar el input de número de divisiones y otros controles
+    // 7. Sincronizar controles
     const divisionInput = document.getElementById('division-count');
     if (divisionInput) divisionInput.value = currentDivisionCount;
 
     const comunasCheckbox = document.getElementById('toggle-comunas');
-    if (comunasCheckbox) {
-        comunasCheckbox.checked = comunasIncluidas;
-        // Disparar el evento 'change' para que se ejecute la lógica de mostrar/ocultar comunas
-        if (comunasIncluidas) {
-            // Simular un cambio solo si es necesario, para no recargar innecesariamente
-            // showComunas() se llamará desde el evento change si es necesario
-        }
-    }
+    if (comunasCheckbox) comunasCheckbox.checked = comunasIncluidas;
     
-    // 8. Notificar a todos los módulos que el estado ha cambiado
+    // 8. Notificar a todos los módulos
     notifyStateChange();
     updateDivisionsTitle();
     
@@ -449,516 +249,16 @@ function applyProposalToUI(proposal) {
 
 /**
  * ACTUALIZA LA INTERFAZ SEGÚN EL ESTADO DE AUTENTICACIÓN
- * Ahora delega el renderizado al dropdown, ya que los botones
- * se movieron al menú desplegable de la esquina superior izquierda.
+ * Delega el renderizado al dropdown de la esquina superior derecha.
  */
 function updateAuthUI() {
-    // Renderizar el contenido del dropdown según estado
     if (typeof renderDropdownContent === 'function') {
         renderDropdownContent(currentUser, currentProposal);
     }
 }
 
 // =============================================
-// MODALES
-// =============================================
-
-/**
- * MUESTRA EL MODAL DE GUARDAR BORRADOR
- */
-function showSaveDraftModal() {
-    // Si el usuario está autenticado, guardar directamente
-    if (currentUser) {
-        const proposal = serializeProposal();
-        saveProposalToSupabase(proposal, false).then(result => {
-            if (result) {
-                alert('Borrador guardado exitosamente.');
-                currentProposal = result;
-                updateAuthUI();
-            }
-        });
-        return;
-    }
-    
-    // Usuario no autenticado: mostrar modal
-    if (document.getElementById('save-draft-modal')) {
-        document.getElementById('save-draft-modal').style.display = 'flex';
-        return;
-    }
-
-    const modal = document.createElement('div');
-    modal.id = 'save-draft-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-    `;
-
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            position: relative;
-        ">
-            <button id="save-draft-close" style="
-                position: absolute;
-                top: 10px; right: 15px;
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-                color: #999;
-            ">×</button>
-            <h3 style="margin-top: 0; color: #333;">Guardar borrador</h3>
-            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                Solo es posible almacenar una propuesta por usuario. Si ya tenías una, se va a sobrescribir.
-            </p>
-            
-            <label for="draft-title" style="display: block; font-weight: bold; margin-bottom: 5px;">Título borrador</label>
-            <input type="text" id="draft-title" placeholder="Ej: Mi propuesta de división" style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
-                margin-bottom: 5px;
-                font-size: 15px;
-            " maxlength="40" minlength="3">
-            <p style="font-size: 11px; color: #999; margin-bottom: 15px;">
-                Mínimo 3 caracteres. Podés editarlo más tarde.
-            </p>
-            
-            <label for="draft-email" style="display: block; font-weight: bold; margin-bottom: 5px;">Correo electrónico</label>
-            <input type="email" id="draft-email" placeholder="tu@email.com" style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
-                margin-bottom: 15px;
-                font-size: 15px;
-            ">
-            
-            <button id="draft-send-link" style="
-                background: #3388ff;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 15px;
-                width: 100%;
-            ">Enviar enlace de acceso</button>
-            
-            <div id="draft-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const titleInput = document.getElementById('draft-title');
-    const emailInput = document.getElementById('draft-email');
-    const sendBtn = document.getElementById('draft-send-link');
-    const closeBtn = document.getElementById('save-draft-close');
-    const errorDiv = document.getElementById('draft-error');
-
-    function showError(msg) {
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = msg;
-        setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
-    }
-
-    sendBtn.addEventListener('click', async function() {
-        const titulo = titleInput.value.trim();
-        const email = emailInput.value.trim();
-        
-        if (titulo.length < 3 || titulo.length > 40) {
-            showError('El título debe tener entre 3 y 40 caracteres.');
-            return;
-        }
-        if (!email || !email.includes('@')) {
-            showError('Ingresá un correo electrónico válido.');
-            return;
-        }
-
-        // Serializar propuesta y guardar en localStorage
-        const proposal = serializeProposal();
-        proposal.titulo = titulo;
-        saveProposalToLocalStorage(proposal);
-
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Enviando...';
-        const success = await sendMagicLink(email, '/propuesta/pendiente');
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Enviar enlace de acceso';
-
-        if (success) {
-            modal.innerHTML = getMagicLinkSentHTML(email, 'acceder y guardar tu propuesta');
-        } else {
-            showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
-        }
-    });
-
-    function closeModal() {
-        if (modal.parentNode) modal.parentNode.removeChild(modal);
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
-
-    titleInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') emailInput.focus();
-    });
-    emailInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') sendBtn.click();
-    });
-}
-
-/**
- * MUESTRA EL MODAL DE PUBLICAR PROPUESTA
- */
-function showPublishModal() {
-    if (!currentUser) {
-        alert('Debés iniciar sesión para publicar tu propuesta.');
-        return;
-    }
-
-    const proposal = serializeProposal();
-    const defaultTitle = currentProposal ? currentProposal.titulo : 'Mi propuesta';
-
-    const modal = document.createElement('div');
-    modal.id = 'publish-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-    `;
-
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 450px;
-            width: 90%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            position: relative;
-        ">
-            <button id="publish-close" style="
-                position: absolute;
-                top: 10px; right: 15px;
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-                color: #999;
-            ">×</button>
-            <h3 style="margin-top: 0; color: #333;">Guardar y compartir propuesta</h3>
-            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                Solo es posible almacenar una propuesta por usuario. Si ya tenías una, se va a sobrescribir.
-            </p>
-            
-            <label for="publish-title" style="display: block; font-weight: bold; margin-bottom: 5px;">Título definitivo</label>
-            <input type="text" id="publish-title" value="${defaultTitle}" style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
-                margin-bottom: 15px;
-                font-size: 15px;
-            " maxlength="40" minlength="3">
-            <p style="font-size: 11px; color: #999; margin-bottom: 15px;">
-                Mínimo 3 caracteres, máximo 40.
-            </p>
-            
-            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #666; margin-bottom: 15px; cursor: pointer;">
-                <input type="checkbox" id="publish-terms-check" style="margin-top: 2px;">
-                <span>Acepto los <a href="/terminos" id="publish-terms-link" style="color: #3388ff; text-decoration: underline;">términos y condiciones</a> del sitio</span>
-            </label>
-            
-            <button id="publish-confirm" style="
-                background: #27ae60;
-                color: white;
-                border: none;
-                padding: 12px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 15px;
-                width: 100%;
-            ">Publicar y obtener enlace</button>
-            
-            <div id="publish-result" style="display: none; margin-top: 20px; text-align: center;">
-                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
-                    Tu propuesta está publicada. Compartí este enlace:
-                </p>
-                <div style="
-                    background: #f5f5f5;
-                    padding: 10px;
-                    border-radius: 4px;
-                    margin-bottom: 10px;
-                    word-break: break-all;
-                    font-size: 13px;
-                    color: #333;
-                " id="publish-share-url"></div>
-                <button id="publish-copy-btn" style="
-                    background: #3388ff;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 13px;
-                ">📋 Copiar enlace</button>
-            </div>
-            
-            <div id="publish-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const titleInput = document.getElementById('publish-title');
-    const confirmBtn = document.getElementById('publish-confirm');
-    const closeBtn = document.getElementById('publish-close');
-    const resultDiv = document.getElementById('publish-result');
-    const shareUrlDiv = document.getElementById('publish-share-url');
-    const copyBtn = document.getElementById('publish-copy-btn');
-    const errorDiv = document.getElementById('publish-error');
-
-    function showError(msg) {
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = msg;
-        setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
-    }
-
-    confirmBtn.addEventListener('click', async function() {
-        const titulo = titleInput.value.trim();
-        const termsCheck = document.getElementById('publish-terms-check');
-        if (!termsCheck || !termsCheck.checked) {
-            showError('Debés aceptar los términos y condiciones para publicar tu propuesta.');
-            return;
-        }
-        if (titulo.length < 3 || titulo.length > 40) {
-            showError('El título debe tener entre 3 y 40 caracteres.');
-            return;
-        }
-
-        // Link a términos y condiciones dentro del modal
-        const termsLink = document.getElementById('publish-terms-link');
-        if (termsLink) {
-            termsLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Cerrar el modal de publicar y abrir el de términos
-                if (modal.parentNode) modal.parentNode.removeChild(modal);
-                if (typeof navigateTo === 'function') {
-                    navigateTo('/terminos', () => openFullModal('terms-modal'));
-                } else {
-                    openFullModal('terms-modal');
-                }
-            });
-        }
-        
-        proposal.titulo = titulo;
-        
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Publicando...';
-        
-        const result = await saveProposalToSupabase(proposal, true);
-        
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Publicar y obtener enlace';
-
-        if (result) {
-            currentProposal = result;
-            const shareCode = result.user_share_code;
-            const shareUrl = `${window.location.origin}/propuesta/${shareCode}`;
-            
-            shareUrlDiv.textContent = shareUrl;
-            resultDiv.style.display = 'block';
-            confirmBtn.style.display = 'none';
-            
-            updateAuthUI();
-        } else {
-            showError('Error al publicar la propuesta. Intentá nuevamente.');
-        }
-    });
-
-    copyBtn.addEventListener('click', function() {
-        const url = shareUrlDiv.textContent;
-        navigator.clipboard.writeText(url).then(() => {
-            copyBtn.textContent = '✅ ¡Enlace copiado!';
-            setTimeout(() => { copyBtn.textContent = '📋 Copiar enlace'; }, 2000);
-        }).catch(err => {
-            console.error('Error al copiar:', err);
-        });
-    });
-
-    function closeModal() {
-        if (modal.parentNode) modal.parentNode.removeChild(modal);
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
-}
-
-/**
- * MUESTRA EL MODAL DE ACCEDER A PROPUESTA BORRADOR
- * (Para usuarios no autenticados que ya tienen un borrador)
- */
-function showAccessDraftModal() {
-    if (document.getElementById('access-draft-modal')) {
-        document.getElementById('access-draft-modal').style.display = 'flex';
-        return;
-    }
-
-    const modal = document.createElement('div');
-    modal.id = 'access-draft-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-    `;
-
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            position: relative;
-        ">
-            <button id="access-close" style="
-                position: absolute;
-                top: 10px; right: 15px;
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-                color: #999;
-            ">×</button>
-            <h3 style="margin-top: 0; color: #333;">Cargar mi propuesta</h3>
-            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
-                Ingresá tu correo electrónico para recibir un enlace de acceso.
-            </p>
-            
-            <label for="access-email" style="display: block; font-weight: bold; margin-bottom: 5px;">Correo electrónico</label>
-            <input type="email" id="access-email" placeholder="tu@email.com" style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
-                margin-bottom: 15px;
-                font-size: 15px;
-            ">
-            
-            <button id="access-send-link" style="
-                background: #3388ff;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 15px;
-                width: 100%;
-            ">Enviar enlace de acceso</button>
-            
-            <div id="access-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const emailInput = document.getElementById('access-email');
-    const sendBtn = document.getElementById('access-send-link');
-    const closeBtn = document.getElementById('access-close');
-    const errorDiv = document.getElementById('access-error');
-
-    function showError(msg) {
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = msg;
-        setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
-    }
-
-    sendBtn.addEventListener('click', async function() {
-        const email = emailInput.value.trim();
-        if (!email || !email.includes('@')) {
-            showError('Ingresá un correo electrónico válido.');
-            return;
-        }
-
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Enviando...';
-        const success = await sendMagicLink(email, '');
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Enviar enlace de acceso';
-
-        if (success) {
-            modal.innerHTML = getMagicLinkSentHTML(email, 'acceder a tu propuesta');
-        } else {
-            showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
-        }
-    });
-
-    function closeModal() {
-        if (modal.parentNode) modal.parentNode.removeChild(modal);
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
-
-    emailInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') sendBtn.click();
-    });
-}
-
-/**
- * MUESTRA EL MODAL DE OCULTAR PROPUESTA PÚBLICA
- */
-function showUnpublishModal() {
-    if (!currentUser || !currentProposal) return;
-    
-    if (confirm('¿Estás seguro de que querés ocultar tu propuesta pública? Dejará de ser accesible para otros usuarios.')) {
-        saveProposalToSupabase(currentProposal, false).then(result => {
-            if (result) {
-                currentProposal = result;
-                alert('Propuesta ocultada exitosamente.');
-                updateAuthUI();
-            }
-        });
-    }
-}
-
-// =============================================
-// PLANTILLA DE "MAGIC LINK ENVIADO"
+// PLANTILLA DEL EMAIL DE MAGIC LINK
 // =============================================
 
 /**
@@ -966,7 +266,8 @@ function showUnpublishModal() {
  * Recrea visualmente el email de Supabase para dar instrucciones claras.
  * @param {string} email - Correo del usuario
  * @param {string} accion - Frase que describe la acción ("acceder a tu propuesta", etc.)
- * @returns {string} - HTML de la pantalla
+ * @returns {string} - HTML de la pantalla (sin contenedor propio: el modal
+ *                     que lo invoque debe envolverlo en un fondo blanco).
  */
 function getMagicLinkSentHTML(email, accion) {
     return `
@@ -977,7 +278,6 @@ function getMagicLinkSentHTML(email, accion) {
                 hacé click en el texto "Sign In" del correo y te redirigirá a nuestro sitio.
             </p>
             
-            <!-- Recreación visual del email de Supabase -->
             <div style="
                 border: 1px solid #ddd;
                 border-radius: 6px;
@@ -1022,22 +322,360 @@ function getMagicLinkSentHTML(email, accion) {
 }
 
 // =============================================
+// HELPERS DE MODAL (contenedor blanco común)
+// =============================================
+
+/**
+ * DEVUELVE EL HTML DEL CONTENEDOR BLANCO PARA MODALES DE AUTH
+ * Centraliza el estilo para evitar repeticiones y garantizar contraste.
+ * @param {string} contenidoHTML - HTML interno del modal
+ * @param {string} idBotonCerrar - ID del botón de cerrar
+ * @returns {string} - HTML del contenedor blanco completo
+ */
+function wrapAuthModalContent(contenidoHTML, idBotonCerrar) {
+    return `
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 560px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: relative;
+            font-family: Arial, sans-serif;
+        ">
+            <button id="${idBotonCerrar}" style="
+                position: absolute;
+                top: 10px; right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #999;
+            ">×</button>
+            ${contenidoHTML}
+        </div>
+    `;
+}
+
+// =============================================
+// MODALES DE AUTENTICACIÓN
+// =============================================
+
+/**
+ * MUESTRA EL MODAL DE GUARDAR BORRADOR
+ * - Si el usuario está autenticado: guarda el borrador directamente.
+ * - Si no: pide título y email, guarda en localStorage y envía magic link.
+ */
+function showSaveDraftModal() {
+    // Si ya está autenticado, guardar directamente
+    if (currentUser) {
+        const proposal = serializeProposal();
+        saveProposalToSupabase(proposal, false).then(result => {
+            if (result) {
+                alert('Borrador guardado exitosamente.');
+                currentProposal = result;
+                updateAuthUI();
+            }
+        });
+        return;
+    }
+    
+    // Modal ya abierto: solo mostrarlo
+    if (document.getElementById('save-draft-modal')) {
+        document.getElementById('save-draft-modal').style.display = 'flex';
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'save-draft-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: Arial, sans-serif;
+    `;
+
+    function renderForm() {
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                max-width: 420px;
+                width: 90%;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                position: relative;
+            ">
+                <button id="save-draft-close" style="
+                    position: absolute;
+                    top: 10px; right: 15px;
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: #999;
+                ">×</button>
+                <h3 style="margin-top: 0; color: #333;">Guardar borrador</h3>
+                <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+                    Solo es posible almacenar una propuesta por usuario. Si ya tenías una, se va a sobrescribir.
+                </p>
+                
+                <label for="draft-title" style="display: block; font-weight: bold; margin-bottom: 5px;">Título borrador</label>
+                <input type="text" id="draft-title" placeholder="Ej: Mi propuesta de división" style="
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                    margin-bottom: 5px;
+                    font-size: 15px;
+                " maxlength="40" minlength="3">
+                <p style="font-size: 11px; color: #999; margin-bottom: 15px;">
+                    Mínimo 3 caracteres. Podés editarlo más tarde.
+                </p>
+                
+                <label for="draft-email" style="display: block; font-weight: bold; margin-bottom: 5px;">Correo electrónico</label>
+                <input type="email" id="draft-email" placeholder="tu@email.com" style="
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                    margin-bottom: 15px;
+                    font-size: 15px;
+                ">
+                
+                <button id="draft-send-link" style="
+                    background: #3388ff;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 15px;
+                    width: 100%;
+                ">Enviar enlace de acceso</button>
+                
+                <div id="draft-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
+            </div>
+        `;
+        attachFormHandlers();
+    }
+
+    function renderSent(email) {
+        const contenido = getMagicLinkSentHTML(email, 'acceder y guardar tu propuesta');
+        modal.innerHTML = wrapAuthModalContent(contenido, 'save-draft-close-sent');
+        document.getElementById('save-draft-close-sent').addEventListener('click', closeModal);
+    }
+
+    function attachFormHandlers() {
+        const titleInput = document.getElementById('draft-title');
+        const emailInput = document.getElementById('draft-email');
+        const sendBtn = document.getElementById('draft-send-link');
+        const closeBtn = document.getElementById('save-draft-close');
+        const errorDiv = document.getElementById('draft-error');
+
+        function showError(msg) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = msg;
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+        }
+
+        sendBtn.addEventListener('click', async function() {
+            const titulo = titleInput.value.trim();
+            const email = emailInput.value.trim();
+            
+            if (titulo.length < 3 || titulo.length > 40) {
+                showError('El título debe tener entre 3 y 40 caracteres.');
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                showError('Ingresá un correo electrónico válido.');
+                return;
+            }
+
+            const proposal = serializeProposal();
+            proposal.titulo = titulo;
+            saveProposalToLocalStorage(proposal);
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Enviando...';
+            const success = await sendMagicLink(email, '/propuesta/pendiente');
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Enviar enlace de acceso';
+
+            if (success) {
+                renderSent(email);
+            } else {
+                showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
+            }
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') emailInput.focus(); });
+        emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    }
+
+    function closeModal() {
+        if (modal.parentNode) modal.parentNode.removeChild(modal);
+    }
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+
+    renderForm();
+    document.body.appendChild(modal);
+}
+
+/**
+ * MUESTRA EL MODAL DE CARGAR PROPUESTA
+ * Pide email y envía magic link para acceder a la propuesta del usuario.
+ */
+function showAccessDraftModal() {
+    if (document.getElementById('access-draft-modal')) {
+        document.getElementById('access-draft-modal').style.display = 'flex';
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'access-draft-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: Arial, sans-serif;
+    `;
+
+    function renderForm() {
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                max-width: 400px;
+                width: 90%;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                position: relative;
+            ">
+                <button id="access-close" style="
+                    position: absolute;
+                    top: 10px; right: 15px;
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: #999;
+                ">×</button>
+                <h3 style="margin-top: 0; color: #333;">Cargar mi propuesta</h3>
+                <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+                    Ingresá tu correo electrónico para recibir un enlace de acceso.
+                </p>
+                
+                <label for="access-email" style="display: block; font-weight: bold; margin-bottom: 5px;">Correo electrónico</label>
+                <input type="email" id="access-email" placeholder="tu@email.com" style="
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                    margin-bottom: 15px;
+                    font-size: 15px;
+                ">
+                
+                <button id="access-send-link" style="
+                    background: #3388ff;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 15px;
+                    width: 100%;
+                ">Enviar enlace de acceso</button>
+                
+                <div id="access-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
+            </div>
+        `;
+        attachFormHandlers();
+    }
+
+    function renderSent(email) {
+        const contenido = getMagicLinkSentHTML(email, 'acceder a tu propuesta');
+        modal.innerHTML = wrapAuthModalContent(contenido, 'access-close-sent');
+        document.getElementById('access-close-sent').addEventListener('click', closeModal);
+    }
+
+    function attachFormHandlers() {
+        const emailInput = document.getElementById('access-email');
+        const sendBtn = document.getElementById('access-send-link');
+        const closeBtn = document.getElementById('access-close');
+        const errorDiv = document.getElementById('access-error');
+
+        function showError(msg) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = msg;
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+        }
+
+        sendBtn.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
+            if (!email || !email.includes('@')) {
+                showError('Ingresá un correo electrónico válido.');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Enviando...';
+            const success = await sendMagicLink(email, '');
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Enviar enlace de acceso';
+
+            if (success) {
+                renderSent(email);
+            } else {
+                showError('Error al enviar el enlace. Verificá tu correo e intentá nuevamente.');
+            }
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    }
+
+    function closeModal() {
+        if (modal.parentNode) modal.parentNode.removeChild(modal);
+    }
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+
+    renderForm();
+    document.body.appendChild(modal);
+}
+
+// =============================================
 // EXPOSICIÓN PÚBLICA
 // =============================================
 
 window.showSaveDraftModal = showSaveDraftModal;
-window.showPublishModal = showPublishModal;
 window.showAccessDraftModal = showAccessDraftModal;
-window.showUnpublishModal = showUnpublishModal;
 window.updateAuthUI = updateAuthUI;
-window.supabaseClient = supabaseClient;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 
-// Configuración inicial del módulo
 document.addEventListener('DOMContentLoaded', function() {
-    // El dropdown maneja los botones, así que no hay que configurar botones aquí.
-    // Solo aseguramos que el estado inicial se renderice correctamente.
     if (typeof updateAuthUI === 'function') {
         setTimeout(() => updateAuthUI(), 100);
     }
