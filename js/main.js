@@ -84,7 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadPartidosData(),     // Datos de superficie y población de PBA
         loadRegionesExistentes(), // Regiones predefinidas
         loadComunasCABA(),      // Geometrías de comunas de CABA
-        loadDatosComuna()       // Datos de superficie y población de CABA
+        loadDatosComuna(),      // Datos de superficie y población de CABA
+        loadDatosProvincias()   // Datos de otras provincias (todavía no existe el archivo)
     ]).then(() => {
         console.log('✅ Todos los datos cargados correctamente');
         
@@ -94,6 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 3. Inicializamos la interfaz de usuario
         initializeUI();
+        
+        // 4. Aplicar propuesta pendiente (si el usuario se autenticó antes de cargar los datos)
+        if (window.__pendingProposal && typeof applyProposalToUI === 'function') {
+            applyProposalToUI(window.__pendingProposal);
+            window.__pendingProposal = null;
+        }
+        
+        // 5. Verificar si la URL corresponde a una propuesta pública
+        checkPublicProposalRoute();
         
     }).catch(error => {
         console.error('❌ Error en la inicialización:', error);
@@ -140,6 +150,16 @@ function initializeUI() {
     initializeComparisonTable();
     updateRemainingCount();
     updateDivisionsTitle();
+
+    // Actualizar UI de autenticación
+    if (typeof updateAuthUI === 'function') {
+    updateAuthUI();
+    }
+
+    // Inicializar tabs (por si no se inicializaron antes)
+    if (typeof activateTab === 'function') {
+        // La inicialización ya ocurre en tabs-manager.js al DOMContentLoaded
+    }
     
     console.log('✅ Interfaz de usuario inicializada');
 }
@@ -230,4 +250,32 @@ function getDepartmentCode(departmentName) {
 function isGBADepartment(departmentName) {
     const code = getDepartmentCode(departmentName);
     return code ? gbaCodes.includes(code) : false;
+}
+
+
+/**
+ * DETECTA SI LA URL CORRESPONDE A UNA PROPUESTA PÚBLICA
+ * y carga los datos correspondientes.
+ * IMPORTANTE: debe llamarse DESPUÉS de que los datos base estén cargados.
+ */
+async function checkPublicProposalRoute() {
+    const path = window.location.pathname;
+    const match = path.match(/\/propuesta\/([a-z0-9]+)/);
+    
+    if (!match) return;
+    
+    const shareCode = match[1];
+    console.log('📋 Detectada ruta de propuesta pública:', shareCode);
+    
+    if (typeof loadPublicProposal !== 'function' || typeof applyProposalToUI !== 'function') {
+        console.warn('⚠️ Módulos de propuesta no disponibles todavía');
+        return;
+    }
+    
+    const proposal = await loadPublicProposal(shareCode);
+    if (proposal) {
+        applyProposalToUI(proposal);
+    } else {
+        console.warn('⚠️ No se encontró propuesta pública con código:', shareCode);
+    }
 }

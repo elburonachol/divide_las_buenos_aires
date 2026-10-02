@@ -21,15 +21,41 @@ function setupResetButton() {
 }
 
 /**
- * CONFIGURA EL SELECTOR DE NÚMERO DE DIVISIONES
- * Maneja cambios en la cantidad de divisiones visibles
+ * CONFIGURA EL CONTROL DE NÚMERO DE DIVISIONES
+ * Permite editar el número directamente o mediante botones +/-.
+ * Valida que sea un entero entre 1 y 15.
  */
 function setupDivisionSelector() {
-    const selector = document.getElementById('division-count');
-    selector.value = currentDivisionCount;
+    const input = document.getElementById('division-count');
+    const decreaseBtn = document.getElementById('division-decrease');
+    const increaseBtn = document.getElementById('division-increase');
     
-    selector.addEventListener('change', function() {
-        const newCount = parseInt(this.value);
+    if (!input) return;
+    
+    // Establecer valor inicial
+    input.value = currentDivisionCount;
+    
+    /**
+     * Valida y normaliza un valor numérico
+     * @param {string} rawValue - Valor crudo del input
+     * @returns {number|null} - Número válido entre 1 y 15, o null si es inválido
+     */
+    function parseAndValidate(rawValue) {
+        const trimmed = String(rawValue).trim();
+        if (!/^\d+$/.test(trimmed)) return null;
+        let num = parseInt(trimmed, 10);
+        if (num < 1) num = 1;
+        if (num > 15) num = 15;
+        return num;
+    }
+    
+    /**
+     * Aplica un nuevo número de divisiones
+     * @param {number} newCount - Nuevo número de divisiones
+     */
+    function applyDivisionCount(newCount) {
+        input.value = newCount;
+        input.classList.remove('error');
         if (newCount !== currentDivisionCount) {
             initializeDivisionBoxes(newCount);
             // Si estamos en modo región existente, deseleccionar al cambiar divisiones
@@ -38,7 +64,57 @@ function setupDivisionSelector() {
                 currentRegionType = null;
             }
         }
+    }
+    
+    // Validación visual en tiempo real
+    input.addEventListener('input', function() {
+        const raw = this.value.trim();
+        if (raw === '') {
+            this.classList.remove('error');
+            return;
+        }
+        if (!/^\d+$/.test(raw)) {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
+        }
     });
+    
+    // Aplicar al perder el foco
+    input.addEventListener('blur', function() {
+        const parsed = parseAndValidate(this.value);
+        if (parsed === null) {
+            // Valor inválido: restaurar valor actual
+            this.value = currentDivisionCount;
+            this.classList.remove('error');
+        } else {
+            applyDivisionCount(parsed);
+        }
+    });
+    
+    // Aplicar con Enter
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+        }
+    });
+    
+    // Botón disminuir
+    if (decreaseBtn) {
+        decreaseBtn.addEventListener('click', function() {
+            const newValue = Math.max(1, currentDivisionCount - 1);
+            applyDivisionCount(newValue);
+        });
+    }
+    
+    // Botón aumentar
+    if (increaseBtn) {
+        increaseBtn.addEventListener('click', function() {
+            const newValue = Math.min(15, currentDivisionCount + 1);
+            applyDivisionCount(newValue);
+        });
+    }
 }
 
 /**

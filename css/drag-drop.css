@@ -10,42 +10,51 @@
 }
 
 .group-box {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
+    background: #f8f9fa; /* Reemplazar por un tono más claro basado en el color de la división */
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-left: 8px solid #ccc; /* Borde lateral izquierdo más ancho (era 4px) */
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    cursor: pointer;
 }
 
 .group-box:hover {
-    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
-.group-box h3 {
-    margin-bottom: 12px;
-    color: #2c3e50;
-    font-size: 1rem;
-    border-bottom: 1px solid #e9ecef;
-    padding-bottom: 8px;
-}
-
-.editable-division-name {
+/* Indicador visual de que el nombre es editable */
+.group-box .editable-division-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 6px 0;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
     cursor: text;
-    padding: 2px 5px;
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
 }
 
-.editable-division-name:hover {
-    background-color: #e9ecef;
+.group-box .editable-division-name:hover {
+    background: rgba(0,0,0,0.04);
 }
 
-.editable-division-name:focus {
+.group-box .editable-division-name:focus {
+    background: white;
     outline: 2px solid #3498db;
-    background-color: white;
+    outline-offset: 1px;
 }
 
 .group-list {
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    /* Sin borde punteado, sin altura mínima forzada */
+}
+
+/* VIEJOS VALORES, POR SI NO FUNCIONAN BIEN LOS PARÁMETROS DE ARRIBA
+/* .group-list {
     min-height: 100px;
     max-height: 200px;
     overflow-y: auto;
@@ -163,4 +172,77 @@
     .count-info {
         font-size: 12px;
     }
+}
+
+/* =============================================
+   CAJAS DE DIVISIÓN CONTRAÍBLES
+   - Estado retraído: sólo nombre visible, altura ~2x título
+   - Hover con delay: se expande mostrando título + 3 depts con scroll
+   - Drag & drop: se expande inmediatamente (clase .expanded)
+   ============================================= */
+
+/* Altura base de la caja en estado colapsado: ~2x altura del título */
+.group-box {
+    min-height: 60px;
+    padding: 8px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.group-box .editable-division-name {
+    margin: 0;
+    padding: 8px 6px;
+    font-size: 15px;
+}
+
+/* Estado por defecto: la lista de departamentos está oculta */
+.group-box .group-list {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
+    transition-delay: 0s;
+    opacity: 0;
+    margin-top: 0;
+    min-height: 0;
+    padding: 0 10px;
+}
+
+/* Al pasar el cursor: se expande después de un delay razonable */
+.group-box:hover .group-list {
+    max-height: 150px;
+    overflow-y: auto;
+    transition-delay: 0.6s;
+    opacity: 1;
+    margin-top: 8px;
+    padding: 8px 10px;
+}
+
+/* Durante drag & drop: se expande inmediatamente */
+.group-box.expanded .group-list {
+    max-height: 150px;
+    overflow-y: auto;
+    transition-delay: 0s;
+    opacity: 1;
+    margin-top: 8px;
+    padding: 8px 10px;
+}
+
+/* Scrollbar dentro de las cajas de división */
+.group-box .group-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.group-box .group-list::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+}
+
+.group-box .group-list::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+.group-box .group-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.35);
 }

@@ -87,7 +87,7 @@ function getDepartmentStyle(feature) {
             fillColor: departmentGroups[groupId].color,
             fillOpacity: 0.8,
             color: 'white',  // Borde blanco para que se destaque sobre las regionalizaciones
-            weight: 2,       // Borde más grueso para departamentos asignados
+            weight: 1,       // Borde más grueso para departamentos asignados
             opacity: 1
         };
     }
@@ -143,7 +143,7 @@ function getComunaStyle(feature) {
             fillColor: departmentGroups[groupId].color,
             fillOpacity: 0.8,
             color: 'white',
-            weight: 2,
+            weight: 1,
             opacity: 1
         };
     }
@@ -165,16 +165,12 @@ function getComunaStyle(feature) {
 function setupDepartmentInteractions(feature, layer) {
     const nombre = feature.properties.nam || 'Sin nombre';
     
-    // Tooltip con nombre del departamento - controlado manualmente para evitar acumulación
-    layer.bindTooltip(`<strong>${nombre}</strong>`, {
-        permanent: false,
-        direction: 'auto',
-        className: 'map-tooltip'
-    });
+    // Tooltip deshabilitado (no queremos recuadro blanco al hover)
+    // El nombre del departamento se sigue mostrando por el estilo de resaltado del borde
     
-    // Click para resaltar temporalmente
-    layer.on('click', function() {
-        highlightDepartment(nombre);
+    // Click: mostrar popup con datos del departamento
+    layer.on('click', function(e) {
+        showDepartmentPopup(feature, layer, e.latlng);
     });
     
     // Efectos hover: abre tooltip y aplica estilo de resaltado
@@ -213,16 +209,12 @@ function setupDepartmentInteractions(feature, layer) {
 function setupComunaInteractions(feature, layer) {
     const nombre = feature.properties.nam || 'Sin nombre';
     
-    // Tooltip con nombre de la comuna
-    layer.bindTooltip(`<strong>${nombre}</strong>`, {
-        permanent: false,
-        direction: 'auto',
-        className: 'map-tooltip'
-    });
+    // Tooltip deshabilitado (no queremos recuadro blanco al hover)
+    // El nombre del departamento se sigue mostrando por el estilo de resaltado del borde
     
-    // Click para resaltar temporalmente
-    layer.on('click', function() {
-        highlightDepartment(nombre);
+    // Click: mostrar popup con datos
+    layer.on('click', function(e) {
+        showDepartmentPopup(feature, layer, e.latlng);
     });
     
     // Efectos hover
@@ -651,5 +643,92 @@ function getDepartmentGroupId(departmentName) {
             return groupId;
         }
     }
+    return null;
+}
+
+// =============================================
+// POPUP DE INFORMACIÓN DE DEPARTAMENTO/COMUNA
+// =============================================
+
+/**
+ * MUESTRA UN POPUP CON DATOS DEL DEPARTAMENTO O COMUNA
+ * @param {Object} feature - Feature GeoJSON del elemento
+ * @param {Object} layer - Capa Leaflet del elemento
+ * @param {L.LatLng} latlng - Coordenadas del click
+ */
+function showDepartmentPopup(feature, layer, latlng) {
+    const nombre = feature.properties.nam || 'Sin nombre';
+    const codigo = feature.properties.cde;
+    
+    // Obtener datos del departamento/comuna
+    const poblacion = obtenerDatoPorCodigo(codigo, 'poblacion_total');
+    const superficie = obtenerDatoPorCodigo(codigo, 'superficie');
+    const pbg = obtenerDatoPorCodigo(codigo, 'pbg');
+    const densidad = (poblacion && superficie && superficie > 0) 
+        ? poblacion / superficie 
+        : null;
+    
+    // Formatear valores
+    const poblacionStr = poblacion ? formatearNumero(poblacion) : 'Sin datos';
+    const superficieStr = superficie ? formatearNumero(superficie, 1) + ' km²' : 'Sin datos';
+    const densidadStr = densidad ? formatearNumero(densidad, 2) + ' hab/km²' : 'Sin datos';
+    const pbgStr = pbg ? formatearMoneda(pbg) : 'Sin datos';
+    
+    const popupContent = `
+        <div class="department-popup">
+            <h4>${nombre}</h4>
+            <div class="popup-row">
+                <span class="popup-label">Población:</span>
+                <span class="popup-value">${poblacionStr}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">Superficie:</span>
+                <span class="popup-value">${superficieStr}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">Densidad:</span>
+                <span class="popup-value">${densidadStr}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">PBG:</span>
+                <span class="popup-value">${pbgStr}</span>
+            </div>
+        </div>
+    `;
+    
+    // Crear popup
+    const popup = L.popup({
+        className: 'department-popup-wrapper',
+        closeButton: true,
+        maxWidth: 300,
+        autoPan: true
+    })
+    .setLatLng(latlng)
+    .setContent(popupContent)
+    .openOn(map);
+}
+
+/**
+ * OBTIENE UN DATO POR CÓDIGO CDE
+ * @param {string} codigo - Código CDE
+ * @param {string} variable - Nombre de la variable
+ * @returns {number|null} - Valor numérico o null
+ */
+function obtenerDatoPorCodigo(codigo, variable) {
+    // Buscar en datos de partidos (PBA)
+    if (typeof partidosData !== 'undefined' && partidosData && partidosData.datos) {
+        const codigoNum = codigo.replace(/^0+/, ''); // Quitar ceros iniciales
+        if (partidosData.datos[codigoNum] && partidosData.datos[codigoNum][variable] !== undefined) {
+            return partidosData.datos[codigoNum][variable];
+        }
+    }
+    
+    // Buscar en datos de comunas (CABA)
+    if (typeof datosComuna !== 'undefined' && datosComuna && datosComuna.datos) {
+        if (datosComuna.datos[codigo] && datosComuna.datos[codigo][variable] !== undefined) {
+            return datosComuna.datos[codigo][variable];
+        }
+    }
+    
     return null;
 }

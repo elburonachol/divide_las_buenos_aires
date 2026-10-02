@@ -1,0 +1,61 @@
+/* =============================================
+   POPUP DE INFORMACIÓN DE DEPARTAMENTO EN EL MAPA
+   ============================================= */
+
+.department-popup {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-width: 200px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.department-popup h4 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    color: #2c3e50;
+    border-bottom: 1px solid #e1e8ed;
+    padding-bottom: 8px;
+    font-weight: 700;
+}
+
+.department-popup .popup-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.department-popup .popup-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.department-popup .popup-value {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Override de los estilos por defecto de Leaflet para el popup */
+.leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+}
+
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+/* Ocultar el tooltip por defecto que aparece al hacer hover */
+.leaflet-tooltip.map-tooltip {
+    display: none !important;
+}

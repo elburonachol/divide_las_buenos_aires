@@ -17,7 +17,7 @@
  * Carga todos los departamentos y los prepara para su uso en la aplicación
  */
 function loadGeoJSON() {
-    return fetch('geometrias/deptos_pba.geojson')
+    return fetch('/geometrias/deptos_pba.geojson')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error al cargar el archivo GeoJSON');
@@ -66,7 +66,7 @@ function loadGeoJSON() {
  * Nota: Este archivo tiene la misma estructura de datos que deptos_pba.geojson
  */
 function loadComunasCABA() {
-    return fetch('geometrias/comunas_caba_c_datos.geojson')
+    return fetch('/geometrias/comunas_caba_c_datos.geojson')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error al cargar comunas: HTTP ${response.status}`);
@@ -101,7 +101,7 @@ function loadComunasCABA() {
  * Incluye superficie, población y otras variables para cálculos
  */
 function loadPartidosData() {
-    return fetch('tablas_de_atributos/datos_partidos.json')
+    return fetch('/tablas_de_atributos/datos_partidos.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -126,7 +126,7 @@ function loadPartidosData() {
  * Incluye secciones electorales, regiones sanitarias, regiones educativas y departamentos judiciales
  */
 function loadRegionesExistentes() {
-    return fetch('tablas_de_atributos/regiones_administrativas.json')
+    return fetch('/tablas_de_atributos/regiones_administrativas.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -146,13 +146,35 @@ function loadRegionesExistentes() {
 }
 
 /**
+ * CARGA DE DATOS DE OTRAS PROVINCIAS ARGENTINAS DESDE tablas_de_atributos/datos_provincias.json
+ * Todavía no existe el archivo: falla silenciosamente si no está disponible.
+ */
+function loadDatosProvincias() {
+    return fetch('/tablas_de_atributos/datos_provincias.json')
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            datosProvincias = data;
+            console.log('✅ Datos de otras provincias cargados');
+            return datosProvincias;
+        })
+        .catch(error => {
+            console.warn('ℹ️ datos_provincias.json no disponible aún:', error.message);
+            return null;
+        });
+}
+
+/**
  * CARGA DE DATOS DE COMUNAS DESDE tablas_de_atributos/datos_comunas.json
  * Incluye superficie y población de las comunas de CABA para cálculos
  */
 let datosComuna = null;
+let datosProvincias = null;
 
 function loadDatosComuna() {
-    return fetch('tablas_de_atributos/datos_comunas.json')
+    return fetch('/tablas_de_atributos/datos_comunas.json')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -286,20 +308,20 @@ function calcularTotalDivision(grupoId, variable) {
     
     // Sumar la variable para cada elemento (departamento o comuna) en la división
     elementosEnGrupo.forEach(nombreElemento => {
-    const codigo = obtenerCodigoCdePorNombre(nombreElemento);
-    if (codigo) {
-        // Primero intentar con datos de partidos (PBA)
-        if (partidosData.datos[codigo] && partidosData.datos[codigo][variable] !== undefined) {
-            total += partidosData.datos[codigo][variable];
-            elementosConDatos++;
+        const codigo = obtenerCodigoCdePorNombre(nombreElemento);
+        if (codigo) {
+            // Primero intentar con datos de partidos (PBA)
+            if (partidosData && partidosData.datos[codigo] && partidosData.datos[codigo][variable] !== undefined) {
+                total += partidosData.datos[codigo][variable];
+                elementosConDatos++;
+            }
+            // Si no, intentar con datos de comunas (CABA)
+            else if (datosComuna && datosComuna.datos[codigo] && datosComuna.datos[codigo][variable] !== undefined) {
+                total += datosComuna.datos[codigo][variable];
+                elementosConDatos++;
+            }
         }
-        // Si no, intentar con datos de comunas (CABA)
-        else if (datosComuna && datosComuna.datos[codigo] && datosComuna.datos[codigo][variable] !== undefined) {
-            total += datosComuna.datos[codigo][variable];
-            elementosConDatos++;
-        }
-    }
-});
+    });
     
     // Solo retornar total si encontramos datos para al menos un elemento
     return elementosConDatos > 0 ? total : 0;
@@ -319,4 +341,156 @@ function calcularDensidadDivision(grupoId) {
         return poblacion / superficie;  // devuelve número con precisión completa
     }
     return 0;  // en lugar de '0.0', para que formatearNumero lo maneje
+}
+
+/**
+ * FORMATEA UN VALOR MONETARIO EN MILLONES DE PESOS
+ * @param {number} valor - Valor numérico en millones
+ * @returns {string} - Valor formateado (ej: "$ 12.345 M")
+ */
+function formatearMoneda(valor) {
+    if (valor === 0 || valor === '0') return '$ 0';
+    if (!valor && valor !== 0) return '-';
+    
+    const num = parseFloat(valor);
+    if (isNaN(num)) return '-';
+    
+    // Redondear a entero (millones)
+    const entero = Math.round(num);
+    
+    // Formatear con separador de miles
+    const formateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    return `$ ${formateado} M`;
+}
+
+// =============================================
+// CÁLCULOS ESPECÍFICOS DE LA TABLA COMPARATIVA
+// =============================================
+
+
+/**
+ * CALCULA LA POBLACIÓN DE UNA DIVISIÓN SEPARADA POR JURISDICCIÓN
+ * @returns {Object} {pba: number, caba: number}
+ */
+function calcularPoblacionPorJurisdiccion(grupoId) {
+    const elementos = departmentGroups[grupoId].departments;
+    let pba = 0, caba = 0;
+    
+    elementos.forEach(nombre => {
+        // ¿Es un departamento de PBA?
+        const deptPBA = allDepartments.find(d => d.properties.nam === nombre);
+        if (deptPBA) {
+            const codigo = deptPBA.properties.cde_num;
+            if (partidosData && partidosData.datos[codigo]
+                && partidosData.datos[codigo].poblacion_total) {
+                pba += partidosData.datos[codigo].poblacion_total;
+            }
+            return;
+        }
+        
+        // ¿Es una comuna de CABA?
+        const comuna = comunasCABA.find(c => c.properties.nam === nombre);
+        if (comuna) {
+            const codigo = comuna.properties.cde_num;
+            if (datosComuna && datosComuna.datos[codigo]
+                && datosComuna.datos[codigo].poblacion_total) {
+                caba += datosComuna.datos[codigo].poblacion_total;
+            }
+        }
+    });
+    
+    return { pba, caba };
+}
+
+
+/**
+ * DEVUELVE LAS PROVINCIAS "COMPLETAS" QUE SIEMPRE SE MUESTRAN EN LA TABLA
+ * Estas son la Provincia de Buenos Aires (cde "6") y la Ciudad Autónoma
+ * de Buenos Aires (cde "2"). Se muestran siempre, sin importar el toggle.
+ * @returns {Array} - Lista de {cde, nombre, info}
+ */
+function getProvinciasCompletas() {
+    if (!datosProvincias || !datosProvincias.datos) return [];
+    const codes = ['6', '2'];  // PBA primero, CABA después
+    return codes
+        .filter(c => datosProvincias.datos[c])
+        .map(cde => ({
+            cde: cde,
+            nombre: datosProvincias.datos[cde].nombre_provincia || `Provincia ${cde}`,
+            info: datosProvincias.datos[cde]
+        }));
+}
+
+/**
+ * DEVUELVE LAS OTRAS PROVINCIAS ARGENTINAS (excluyendo PBA y CABA)
+ * Se muestran sólo cuando el toggle "Incluir otras provincias" está activo.
+ * @returns {Array} - Lista de {cde, nombre, info}
+ */
+function getProvinciasArgentinas() {
+    if (!datosProvincias || !datosProvincias.datos) return [];
+    const excluir = new Set(['2', '6']);  // CABA y PBA
+    return Object.entries(datosProvincias.datos)
+        .filter(([cde]) => !excluir.has(cde))
+        .map(([cde, info]) => ({
+            cde: cde,
+            nombre: info.nombre_provincia || `Provincia ${cde}`,
+            info: info
+        }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+// =============================================
+// CÁLCULOS ADICIONALES PARA LA TABLA COMPARATIVA
+// =============================================
+
+/**
+ * CALCULA EL PORCENTAJE DE HOGARES CON NBI EN UNA DIVISIÓN
+ * Fórmula: (suma hogares_nbi / suma hogares_total) * 100
+ * @param {number} grupoId - ID de la división
+ * @returns {number} - Porcentaje (0-100)
+ */
+function calcularPorcentajeNbiDivision(grupoId) {
+    const nbi = calcularTotalDivision(grupoId, 'hogares_nbi');
+    const total = calcularTotalDivision(grupoId, 'hogares_total');
+    if (total > 0) return (nbi / total) * 100;
+    return 0;
+}
+
+/**
+ * CALCULA EL PBG PER CÁPITA DE UNA DIVISIÓN EN PESOS CONSTANTES DE 2004
+ * El PBG está almacenado en millones de pesos, así que multiplicamos
+ * por 1.000.000 antes de dividir por la población para obtener el
+ * resultado en pesos por habitante (evita valores tipo 0,2).
+ * @param {number} grupoId - ID de la división
+ * @returns {number} - PBG per cápita en pesos constantes de 2004 por habitante
+ */
+function calcularPbgPerCapitaDivision(grupoId) {
+    const pbg = calcularTotalDivision(grupoId, 'pbg');       // millones de $
+    const poblacion = calcularTotalDivision(grupoId, 'poblacion_total');
+    if (poblacion > 0 && pbg > 0) {
+        return (pbg * 1000000) / poblacion;                  // $ por habitante
+    }
+    return 0;
+}
+
+/**
+ * CALCULA EL PORCENTAJE DE HOGARES CON NBI PARA UNA PROVINCIA
+ * a partir de un objeto info con hogares_nbi y hogares_total.
+ * @param {Object} info - Objeto con {hogares_nbi, hogares_total}
+ * @returns {number} - Porcentaje (0-100)
+ */
+function calcularPorcentajeNbiProvincia(info) {
+    if (!info || !info.hogares_total) return 0;
+    return (info.hogares_nbi / info.hogares_total) * 100;
+}
+
+/**
+ * CALCULA EL PBG PER CÁPITA DE UNA PROVINCIA EN PESOS CONSTANTES DE 2004
+ * @param {Object} info - Objeto con {pbg, poblacion_total}
+ * @returns {number} - PBG per cápita en pesos de 2004 por habitante
+ */
+function calcularPbgPerCapitaProvincia(info) {
+    if (!info || !info.poblacion_total || !info.pbg) return 0;
+    return (info.pbg * 1000000) / info.poblacion_total;
 }

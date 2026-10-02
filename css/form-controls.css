@@ -99,3 +99,76 @@
         width: 100%;
     }
 }
+
+/* =============================================
+   CONTROL DE NÚMERO DE DIVISIONES (input + botones)
+   ============================================= */
+
+.division-count-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 140px;
+}
+
+.division-count-input {
+    width: 100%;
+    padding: 10px 62px 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    background: white;
+    color: #333;
+}
+
+.division-count-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.division-count-input.error {
+    border-color: #e74c3c;
+    background-color: #fdeaea;
+}
+
+.division-count-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.division-count-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.division-count-btn:active {
+    background: #e0e0e0;
+}
+
+#division-decrease {
+    right: 30px;
+}
+
+#division-increase {
+    right: 6px;
+}

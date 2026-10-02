@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "ultima_actualizacion": "2026-09-26",
+    "ultima_actualizacion": "2026-09-29",
     "elaboracion": "Datos procesados para mapa interactivo de división provincial",
-    "version_estructura": "1.2",
+    "version_estructura": "1.3",
     "fuentes_principales": [
       "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022. Resultados definitivos.",
       "Instituto Geográfico Nacional (IGN): Determinación de la superficie correspondiente al Territorio Continental, Antártico e Insular de la República Argentina. Tabla 17: Valores poblacionales proyectados al año 2020 y de superficie correspondientes a las comunas de la Ciudad Autónoma de Buenos Aires, pág. 37.",
-      "Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires. Producto Geográfico Bruto por comunas. Valores en miles de pesos constantes de 2004."
+      "Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires. Producto Geográfico Bruto por comunas. Valores en millones de pesos constantes de 2004."
     ],
-    "nota": "Los datos de población y superficie corresponden al Censo 2022. El PBG está expresado en miles de pesos constantes de 2004."
+    "nota": "Los datos de población, superficie y hogares corresponden al Censo 2022. El PBG está expresado en millones de pesos constantes de 2004."
   },
   "variables": {
     "cde": {
@@ -35,12 +35,27 @@
     },
     "pbg": {
       "nombre": "Producto Bruto Geográfico",
-      "tipo": "entero",
-      "unidad": "miles de pesos constantes de 2004",
-      "descripcion": "Producto Bruto Geográfico de la comuna, expresado en miles de pesos constantes de 2004. Fuente: Instituto de Estadística y Censos de CABA.",
+      "tipo": "decimal",
+      "unidad": "millones de pesos constantes de 2004",
+      "descripcion": "Producto Bruto Geográfico de la comuna, expresado en millones de pesos constantes de 2004. Fuente: Instituto de Estadística y Censos de CABA.",
       "operacion": "suma",
-      "fuente": "Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires",
-      "factor": 1
+      "fuente": "Instituto de Estadística y Censos de la Ciudad Autónoma de Buenos Aires"
+    },
+    "hogares_nbi": {
+      "nombre": "Hogares con NBI",
+      "tipo": "entero",
+      "unidad": "hogares",
+      "descripcion": "Cantidad de hogares con Necesidades Básicas Insatisfechas (NBI). Fuente: INDEC, Censo 2022.",
+      "operacion": "suma",
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
+    },
+    "hogares_total": {
+      "nombre": "Hogares totales",
+      "tipo": "entero",
+      "unidad": "hogares",
+      "descripcion": "Cantidad total de hogares. Fuente: INDEC, Censo 2022.",
+      "operacion": "suma",
+      "fuente": "INDEC, Censo Nacional de Población, Hogares y Viviendas 2022"
     }
   },
   "datos": {
@@ -48,91 +63,121 @@
       "cde": "2007",
       "superficie": 17.9,
       "poblacion_total": 223554,
-      "pbg": 34782390
+      "pbg": 44609.74,
+      "hogares_nbi": 12307,
+      "hogares_total": 106509
     },
     "2014": {
       "cde": "2014",
       "superficie": 6.3,
       "poblacion_total": 161645,
-      "pbg": 5413872
+      "pbg": 6943.5,
+      "hogares_nbi": 1665,
+      "hogares_total": 83818
     },
     "2021": {
       "cde": "2021",
       "superficie": 6.4,
       "poblacion_total": 196240,
-      "pbg": 5228470
+      "pbg": 6705.71,
+      "hogares_nbi": 9099,
+      "hogares_total": 92555
     },
     "2028": {
       "cde": "2028",
       "superficie": 22.7,
       "poblacion_total": 229240,
-      "pbg": 6563304
+      "pbg": 8417.69,
+      "hogares_nbi": 8159,
+      "hogares_total": 91186
     },
     "2035": {
       "cde": "2035",
       "superficie": 6.7,
       "poblacion_total": 194271,
-      "pbg": 3229221
+      "pbg": 4141.6,
+      "hogares_nbi": 4664,
+      "hogares_total": 93208
     },
     "2042": {
       "cde": "2042",
       "superficie": 6.9,
       "poblacion_total": 203043,
-      "pbg": 3150422
+      "pbg": 4040.54,
+      "hogares_nbi": 2886,
+      "hogares_total": 95464
     },
     "2049": {
       "cde": "2049",
       "superficie": 12.4,
       "poblacion_total": 215896,
-      "pbg": 2932268
+      "pbg": 3760.75,
+      "hogares_nbi": 4910,
+      "hogares_total": 90970
     },
     "2056": {
       "cde": "2056",
       "superficie": 22.5,
       "poblacion_total": 204367,
-      "pbg": 1827180
+      "pbg": 2343.43,
+      "hogares_nbi": 6204,
+      "hogares_total": 70622
     },
     "2063": {
       "cde": "2063",
       "superficie": 16.6,
       "poblacion_total": 169063,
-      "pbg": 2981386
+      "pbg": 3823.74,
+      "hogares_nbi": 2666,
+      "hogares_total": 66753
     },
     "2070": {
       "cde": "2070",
       "superficie": 12.6,
       "poblacion_total": 173004,
-      "pbg": 2618734
+      "pbg": 3358.63,
+      "hogares_nbi": 2321,
+      "hogares_total": 73964
     },
     "2077": {
       "cde": "2077",
       "superficie": 14.1,
       "poblacion_total": 204601,
-      "pbg": 3318400
+      "pbg": 4255.97,
+      "hogares_nbi": 2234,
+      "hogares_total": 87910
     },
     "2084": {
       "cde": "2084",
       "superficie": 15.7,
       "poblacion_total": 236887,
-      "pbg": 3308489
+      "pbg": 4243.26,
+      "hogares_nbi": 2033,
+      "hogares_total": 108085
     },
     "2091": {
       "cde": "2091",
       "superficie": 15.0,
       "poblacion_total": 264385,
-      "pbg": 5380523
+      "pbg": 6900.73,
+      "hogares_nbi": 1982,
+      "hogares_total": 127241
     },
     "2098": {
       "cde": "2098",
       "superficie": 15.9,
       "poblacion_total": 248635,
-      "pbg": 5842193
+      "pbg": 7492.83,
+      "hogares_nbi": 2875,
+      "hogares_total": 127733
     },
     "2105": {
       "cde": "2105",
       "superficie": 14.3,
       "poblacion_total": 196876,
-      "pbg": 4647169
+      "pbg": 5960.17,
+      "hogares_nbi": 2850,
+      "hogares_total": 90717
     }
   }
 }

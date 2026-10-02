@@ -20,6 +20,13 @@
 function initializeDivisionBoxes(newCount) {
     const container = document.getElementById('division-boxes-container');
     
+    // Sincronizar el input de número de divisiones
+    const divisionInput = document.getElementById('division-count');
+    if (divisionInput) {
+        divisionInput.value = newCount;
+        divisionInput.classList.remove('error');
+    }
+    
     // Guardar el estado actual antes del cambio para posible restauración
     const previousGroups = JSON.parse(JSON.stringify(departmentGroups));
     
@@ -46,7 +53,10 @@ function initializeDivisionBoxes(newCount) {
         const groupBox = document.createElement('div');
         groupBox.className = 'group-box';
         groupBox.setAttribute('data-group-id', i);
-        groupBox.style.borderLeft = `4px solid ${color}`;
+        // Reemplazarla por:
+        groupBox.style.borderLeft = `8px solid ${color}`;
+        // Generar un tono claro del color para el fondo de la caja
+        groupBox.style.background = hexToLightTint(color, 0.85);
 
         groupBox.innerHTML = `
             <h3 class="editable-division-name" contenteditable="true">${defaultName}</h3>
@@ -306,35 +316,31 @@ function initializeDragAndDrop() {
             Sortable.create(divisionList, {
                 group: {
                     name: 'departamentos',
-                    pull: true, // Se pueden sacar elementos
-                    put: true   // Se pueden soltar elementos
+                    pull: true,
+                    put: true
                 },
                 animation: 150,
                 ghostClass: 'dragging',
                 dragClass: 'dragging-item',
-                // Cuando se empieza a arrastrar
                 onChoose: function(evt) {
                     // Comprimir todas las listas
                     compressAllLists();
+                    // Expandir la caja actual inmediatamente
+                    const groupBox = evt.from.closest('.group-box');
+                    if (groupBox) groupBox.classList.add('expanded');
                 },
-                // Cuando se mueve sobre otro contenedor
                 onMove: function(evt) {
                     // Expandir el contenedor sobre el que se está moviendo
                     const toContainer = evt.to;
                     expandContainer(toContainer);
                 },
-                // Cuando se suelta el elemento
                 onUnchoose: function(evt) {
                     // Restaurar todos los contenedores a su tamaño original
                     restoreAllLists();
                 },
                 onEnd: function(evt) {
                     handleDepartmentMove(evt);
-                    // Ordenar la división después del movimiento
                     sortDivisionList(index + 1);
-                    // Asegurar que no haya duplicados
-                    //removeDuplicatesFromDivision(index + 1);
-                    // Asegurar que se restauren los tamaños
                     restoreAllLists();
                 }
             });
@@ -363,23 +369,22 @@ function compressAllLists() {
 }
 
 /**
- * EXPANDE UN CONTENEDOR ESPECÍFICO
- * Se llama cuando se arrastra un elemento sobre un contenedor
+ * EXPANDE UN CONTENEDOR ESPECÍFICO DURANTE DRAG & DROP
  * @param {HTMLElement} container - El contenedor a expandir
  */
 function expandContainer(container) {
-    // Primero, restaurar todos los contenedores a su tamaño comprimido
+    // Primero, comprimir todos los contenedores
     compressAllLists();
     
     // Luego expandir el contenedor objetivo
     if (container.id === 'all-departments-list') {
-        // Es el listado principal
-        container.parentElement.classList.remove('compressed');
         container.parentElement.classList.add('expanded');
     } else if (container.id.startsWith('division-')) {
-        // Es una división
-        container.parentElement.classList.remove('compressed');
-        container.parentElement.classList.add('expanded');
+        // Es una división: agregar clase expanded al group-box padre
+        const groupBox = container.closest('.group-box');
+        if (groupBox) {
+            groupBox.classList.add('expanded');
+        }
     }
 }
 
@@ -392,7 +397,10 @@ function restoreAllLists() {
     for (let i = 1; i <= currentDivisionCount; i++) {
         const divisionList = document.getElementById(`division-${i}`);
         if (divisionList) {
-            divisionList.parentElement.classList.remove('compressed', 'expanded');
+            const groupBox = divisionList.closest('.group-box');
+            if (groupBox) {
+                groupBox.classList.remove('expanded', 'compressed');
+            }
         }
     }
     
@@ -469,4 +477,31 @@ function handleDepartmentMove(evt) {
     // Actualizar todo el estado de la aplicación
     notifyStateChange();
     sortMainList();
+}
+
+/**
+ * CONVIERTE UN COLOR HEX EN UN TONO MUY CLARO (TINT)
+ * @param {string} hex - Color en formato #RRGGBB
+ * @param {number} factor - Factor de claridad (0 a 1). 0.85 = muy claro.
+ * @returns {string} - Color hex claro
+ */
+function hexToLightTint(hex, factor) {
+    // Eliminar # si existe
+    hex = hex.replace('#', '');
+    
+    // Convertir a RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Mezclar con blanco
+    const newR = Math.round(r + (255 - r) * factor);
+    const newG = Math.round(g + (255 - g) * factor);
+    const newB = Math.round(b + (255 - b) * factor);
+    
+    // Convertir de vuelta a hex
+    return '#' + [newR, newG, newB].map(c => {
+        const hexStr = c.toString(16);
+        return hexStr.length === 1 ? '0' + hexStr : hexStr;
+    }).join('');
 }
