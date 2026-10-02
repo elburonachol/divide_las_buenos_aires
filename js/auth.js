@@ -531,8 +531,8 @@ function showSaveDraftModal() {
         if (e.target === modal) closeModal();
     });
 
-    renderForm();
     document.body.appendChild(modal);
+    renderForm();
 }
 
 /**
@@ -661,8 +661,8 @@ function showAccessDraftModal() {
         if (e.target === modal) closeModal();
     });
 
-    renderForm();
     document.body.appendChild(modal);
+    renderForm();
 }
 
 // =============================================
