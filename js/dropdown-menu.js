@@ -19,6 +19,18 @@ function toggleDropdown() {
     const trigger = document.getElementById('dropdown-trigger');
     if (!dropdown || !trigger) return;
     
+    // Si el usuario está viendo la propuesta de otra persona y hace click
+    // en "Mi propuesta de división", se dispara el popup de fork: cualquier
+    // interacción con el sistema de propuestas implica empezar a armar una
+    // propuesta propia, por lo que no tiene sentido abrir el menú primero.
+    if (window.isViewingOthersProposal && !window.isApplyingProposal && !window.hasShownForkPopup) {
+        window.hasShownForkPopup = true;
+        if (typeof showForkModal === 'function') {
+            showForkModal();
+            return;
+        }
+    }
+    
     const isOpen = dropdown.classList.contains('open');
     if (isOpen) {
         dropdown.classList.remove('open');
