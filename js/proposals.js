@@ -118,7 +118,7 @@ async function saveProposalToSupabase(proposalData, esPublica = false) {
         return null;
     }
 
-    const dataToSave = {
+        const dataToSave = {
         user_id: user.id,
         titulo: proposalData.titulo || 'Mi propuesta',
         es_publica: esPublica,
@@ -127,6 +127,9 @@ async function saveProposalToSupabase(proposalData, esPublica = false) {
         nombres_divisiones: proposalData.nombres_divisiones || [],
         departamentos_por_division: proposalData.departamentos_por_division || {},
         departamentos_en_listado: proposalData.departamentos_en_listado || [],
+        // Campos nuevos de autoría (solo se envían si vienen definidos)
+        ...(proposalData.nombre_autor !== undefined && { nombre_autor: proposalData.nombre_autor }),
+        ...(proposalData.mostrar_nombre_publicamente !== undefined && { mostrar_nombre_publicamente: proposalData.mostrar_nombre_publicamente }),
         updated_at: new Date().toISOString()
     };
 
@@ -206,8 +209,7 @@ async function loadPublicProposal(shareCode) {
 
 /**
  * MUESTRA EL MODAL DE PUBLICAR PROPUESTA
- * Pide título definitivo, valida términos y condiciones,
- * y publica la propuesta en Supabase.
+ * Pide título, nombre y consentimiento de términos.
  */
 function showPublishModal() {
     const user = window.currentUser();
@@ -219,6 +221,7 @@ function showPublishModal() {
     const proposal = serializeProposal();
     const currentProp = window.currentProposal();
     const defaultTitle = currentProp ? currentProp.titulo : 'Mi propuesta';
+    const defaultName = currentProp && currentProp.nombre_autor ? currentProp.nombre_autor : '';
 
     const modal = document.createElement('div');
     modal.id = 'publish-modal';
@@ -238,8 +241,10 @@ function showPublishModal() {
             background: white;
             padding: 30px;
             border-radius: 8px;
-            max-width: 450px;
+            max-width: 480px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             position: relative;
         ">
@@ -256,7 +261,7 @@ function showPublishModal() {
             <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
                 Solo es posible almacenar una propuesta por usuario. Si ya tenías una, se va a sobrescribir.
             </p>
-            
+
             <label for="publish-title" style="display: block; font-weight: bold; margin-bottom: 5px;">Título definitivo</label>
             <input type="text" id="publish-title" value="${defaultTitle}" style="
                 width: 100%;
@@ -264,18 +269,37 @@ function showPublishModal() {
                 border: 1px solid #ddd;
                 border-radius: 4px;
                 box-sizing: border-box;
-                margin-bottom: 15px;
+                margin-bottom: 5px;
                 font-size: 15px;
             " maxlength="40" minlength="3">
             <p style="font-size: 11px; color: #999; margin-bottom: 15px;">
                 Mínimo 3 caracteres, máximo 40.
             </p>
-            
+
+            <label for="publish-name" style="display: block; font-weight: bold; margin-bottom: 5px;">Nombre</label>
+            <input type="text" id="publish-name" value="${defaultName}" placeholder="Ej: Ignacio B." style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-sizing: border-box;
+                margin-bottom: 5px;
+                font-size: 15px;
+            " maxlength="25" minlength="2">
+            <p style="font-size: 11px; color: #999; margin-bottom: 10px;">
+                Mínimo 2 caracteres, máximo 25. Obligatorio.
+            </p>
+
+            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #666; margin-bottom: 15px; cursor: pointer;">
+                <input type="checkbox" id="publish-show-name" style="margin-top: 2px;">
+                <span>Quiero que mi nombre se vea públicamente con la propuesta</span>
+            </label>
+
             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #666; margin-bottom: 15px; cursor: pointer;">
                 <input type="checkbox" id="publish-terms-check" style="margin-top: 2px;">
                 <span>Acepto los <a href="/terminos" id="publish-terms-link" style="color: #3388ff; text-decoration: underline;">términos y condiciones</a> del sitio</span>
             </label>
-            
+
             <button id="publish-confirm" style="
                 background: #27ae60;
                 color: white;
@@ -286,7 +310,7 @@ function showPublishModal() {
                 font-size: 15px;
                 width: 100%;
             ">Publicar y obtener enlace</button>
-            
+
             <div id="publish-result" style="display: none; margin-top: 20px; text-align: center;">
                 <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
                     Tu propuesta está publicada. Compartí este enlace:
@@ -310,7 +334,7 @@ function showPublishModal() {
                     font-size: 13px;
                 ">Copiar enlace</button>
             </div>
-            
+
             <div id="publish-error" style="display: none; color: #d32f2f; font-size: 13px; margin-top: 10px;"></div>
         </div>
     `;
@@ -318,6 +342,8 @@ function showPublishModal() {
     document.body.appendChild(modal);
 
     const titleInput = document.getElementById('publish-title');
+    const nameInput = document.getElementById('publish-name');
+    const showNameCheck = document.getElementById('publish-show-name');
     const confirmBtn = document.getElementById('publish-confirm');
     const closeBtn = document.getElementById('publish-close');
     const resultDiv = document.getElementById('publish-result');
@@ -325,6 +351,11 @@ function showPublishModal() {
     const copyBtn = document.getElementById('publish-copy-btn');
     const errorDiv = document.getElementById('publish-error');
     const termsLink = document.getElementById('publish-terms-link');
+
+    // Precargar checkbox si ya estaba público con nombre visible
+    if (currentProp && currentProp.mostrar_nombre_publicamente) {
+        showNameCheck.checked = true;
+    }
 
     function showError(msg) {
         errorDiv.style.display = 'block';
@@ -342,7 +373,9 @@ function showPublishModal() {
 
     confirmBtn.addEventListener('click', async function() {
         const titulo = titleInput.value.trim();
+        const nombre = nameInput.value.trim();
         const termsCheck = document.getElementById('publish-terms-check');
+        
         if (!termsCheck || !termsCheck.checked) {
             showError('Debés aceptar los términos y condiciones para publicar tu propuesta.');
             return;
@@ -351,8 +384,14 @@ function showPublishModal() {
             showError('El título debe tener entre 3 y 40 caracteres.');
             return;
         }
+        if (nombre.length < 2 || nombre.length > 25) {
+            showError('El nombre debe tener entre 2 y 25 caracteres.');
+            return;
+        }
 
         proposal.titulo = titulo;
+        proposal.nombre_autor = nombre;
+        proposal.mostrar_nombre_publicamente = showNameCheck.checked;
         
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Publicando...';
@@ -363,7 +402,6 @@ function showPublishModal() {
         confirmBtn.textContent = 'Publicar y obtener enlace';
 
         if (result) {
-            // Notificar a auth.js sobre el cambio
             if (typeof window.setCurrentProposal === 'function') {
                 window.setCurrentProposal(result);
             }
