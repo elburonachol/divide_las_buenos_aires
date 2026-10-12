@@ -46,6 +46,14 @@
     
     <div class="container">
         <h1 id="app-title" class="clickable-title">Divide (las) Buenos Aires</h1>
+
+        <!-- Metadatos de la propuesta pública (título + autoría) -->
+        <div id="proposal-meta" class="proposal-meta" style="display: none;">
+            <h2 id="proposal-meta-title"></h2>
+            <p id="proposal-meta-author" style="display: none;">
+                Hecha por <span id="proposal-meta-author-name"></span>
+            </p>
+        </div>
         
         <!-- ============================================
              NAVEGACIÓN PRINCIPAL POR PESTAÑAS
@@ -344,38 +352,32 @@
                 </p>
                 
                 <form id="contact-form" class="contact-form" novalidate>
-                    <div class="contact-field">
-                        <label for="contact-name">Nombre <span class="required">*</span></label>
-                        <input type="text" id="contact-name" name="name" required maxlength="100" autocomplete="name">
-                    </div>
-                    
-                    <div class="contact-field">
-                        <label for="contact-email">Correo electrónico <span class="required">*</span></label>
-                        <input type="email" id="contact-email" name="email" required maxlength="120" autocomplete="email">
-                    </div>
-                    
-                    <div class="contact-field">
-                        <label for="contact-subject">Asunto <span class="required">*</span></label>
-                        <input type="text" id="contact-subject" name="subject" required maxlength="150">
-                    </div>
-                    
-                    <div class="contact-field">
-                        <label for="contact-message">Mensaje <span class="required">*</span></label>
-                        <textarea id="contact-message" name="message" rows="6" required maxlength="2000"></textarea>
-                        <small class="contact-counter"><span id="contact-counter">0</span> / 2000 caracteres</small>
-                    </div>
-                    
-                    <div id="contact-error" class="contact-error" style="display:none;"></div>
-                    <div id="contact-success" class="contact-success" style="display:none;">
-                        ¡Gracias por tu mensaje! Lo vamos a revisar y te responderemos a la brevedad.
-                    </div>
-                    
-                    <button type="submit" id="contact-submit" class="contact-submit">Enviar mensaje</button>
+                    <!-- Los campos se generan dinámicamente desde contact-form.js
+                     según el estado de autenticación del usuario. -->
                 </form>
             </div>
         </section>
     </div>
 
+
+    <!-- ============================================
+     POPUP: FORK DE PROPUESTA AJENA
+     ============================================ -->
+<div class="full-modal" id="fork-modal" role="dialog" aria-modal="true">
+    <div class="full-modal-content" style="max-width: 520px;">
+        <h2>Ahora estás armando tu propia propuesta</h2>
+        <p style="color: #495057; font-size: 15px; line-height: 1.7; margin-bottom: 15px;">
+            La propuesta que estabas viendo pertenece a otro usuario. Como empezaste a modificarla,
+            a partir de ahora vas a estar armando <strong>tu propia propuesta</strong> de división de (las) Buenos Aires.
+        </p>
+        <p style="color: #495057; font-size: 15px; line-height: 1.7; margin-bottom: 20px;">
+            Al aceptar, se va a abrir una nueva pestaña con la web de inicio ¡éxitos!
+        </p>
+        <button id="fork-accept-btn" class="contact-submit" style="width: 100%;">Aceptar</button>
+    </div>
+</div>
+
+    
     <!-- ============================================
          FOOTER con enlaces a FAQ, T&C y Privacidad
          ============================================ -->
