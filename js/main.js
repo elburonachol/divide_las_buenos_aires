@@ -45,6 +45,11 @@ let selectedDepartments = []; // Departamentos seleccionados por polígono
 let selectedDepartmentsSet = new Set(); // Para búsquedas rápidas
 let pointMarkers = [];      // Marcadores de puntos del polígono
 
+// Estado para fork de propuestas ajenas
+window.isViewingOthersProposal = false;
+window.isApplyingProposal = false;
+window.hasShownForkPopup = false;
+
 // =============================================
 // CONSTANTES GLOBALES
 // =============================================
@@ -98,8 +103,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 4. Aplicar propuesta pendiente (si el usuario se autenticó antes de cargar los datos)
         if (window.__pendingProposal && typeof applyProposalToUI === 'function') {
-            applyProposalToUI(window.__pendingProposal);
+            applyProposalToUI(window.__pendingProposal, window.__pendingProposalOptions || {});
             window.__pendingProposal = null;
+            window.__pendingProposalOptions = null;
+        }
+        
+        // 4b. Aplicar estado de fork si viene de otra pestaña
+        const forkState = localStorage.getItem('divide_las_ba_fork_state');
+        if (forkState) {
+            try {
+                const fork = JSON.parse(forkState);
+                localStorage.removeItem('divide_las_ba_fork_state');
+                window.isViewingOthersProposal = false;
+                window.hasShownForkPopup = true; // evitar que se dispare en la primera modificación
+                applyProposalToUI(fork, { isFork: true });
+            } catch (e) {
+                console.error('Error aplicando fork:', e);
+            }
         }
         
         // 5. Verificar si la URL corresponde a una propuesta pública
@@ -169,21 +189,30 @@ function initializeUI() {
 // =============================================
 
 /**
- * Notifica a todos los módulos que deben actualizar sus visualizaciones
- * Se llama cuando cambia el estado de las divisiones
+ * Notifica a todos los módulos que deben actualizar sus visualizaciones.
+ * Además, si estamos viendo una propuesta ajena y el usuario la modifica,
+ * dispara el popup de fork.
  */
 function notifyStateChange() {
     if (typeof updateDepartmentGroups === 'function') {
-        updateDepartmentGroups();   // Actualiza la estructura de datos
+        updateDepartmentGroups();
     }
     if (typeof updateMapColors === 'function') {
-        updateMapColors();          // Actualiza colores en el mapa
+        updateMapColors();
     }
     if (typeof updateComparisonTable === 'function') {
-        updateComparisonTable();    // Actualiza tabla comparativa
+        updateComparisonTable();
     }
     if (typeof updateRemainingCount === 'function') {
-        updateRemainingCount();     // Actualiza contadores
+        updateRemainingCount();
+    }
+    
+    // Detectar fork: si estamos viendo propuesta ajena y el usuario la modifica
+    if (window.isViewingOthersProposal && !window.isApplyingProposal && !window.hasShownForkPopup) {
+        window.hasShownForkPopup = true;
+        if (typeof showForkModal === 'function') {
+            showForkModal();
+        }
     }
 }
 
@@ -256,7 +285,6 @@ function isGBADepartment(departmentName) {
 /**
  * DETECTA SI LA URL CORRESPONDE A UNA PROPUESTA PÚBLICA
  * y carga los datos correspondientes.
- * IMPORTANTE: debe llamarse DESPUÉS de que los datos base estén cargados.
  */
 async function checkPublicProposalRoute() {
     const path = window.location.pathname;
@@ -274,8 +302,68 @@ async function checkPublicProposalRoute() {
     
     const proposal = await loadPublicProposal(shareCode);
     if (proposal) {
-        applyProposalToUI(proposal);
+        window.isViewingOthersProposal = true;
+        window.hasShownForkPopup = false;
+        applyProposalToUI(proposal, { isPublic: true });
     } else {
         console.warn('⚠️ No se encontró propuesta pública con código:', shareCode);
     }
 }
+
+// =============================================
+// FORK DE PROPUESTA AJENA
+// =============================================
+
+/**
+ * MUESTRA EL POPUP QUE EXPLICA QUE AHORA SE ESTÁ ARMANDO
+ * UNA PROPUESTA PROPIA A PARTIR DE UNA AJENA.
+ */
+function showForkModal() {
+    const modal = document.getElementById('fork-modal');
+    if (!modal) return;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    const acceptBtn = document.getElementById('fork-accept-btn');
+    if (acceptBtn) {
+        // Limpiar listeners previos para no duplicar
+        const newBtn = acceptBtn.cloneNode(true);
+        acceptBtn.parentNode.replaceChild(newBtn, acceptBtn);
+        newBtn.addEventListener('click', handleForkAccept);
+    }
+}
+
+/**
+ * MANEJA LA ACEPTACIÓN DEL FORK
+ * Guarda el estado actual en localStorage, abre una nueva pestaña
+ * y recarga la actual para volver a la vista original.
+ */
+function handleForkAccept() {
+    const modal = document.getElementById('fork-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Serializar el estado actual (sin título ni autor)
+    const forkedState = serializeProposal();
+    forkedState.titulo = ''; // el título pertenece al usuario original
+    forkedState.nombre_autor = null;
+    forkedState.mostrar_nombre_publicamente = false;
+    
+    // Guardar en localStorage para que la nueva pestaña lo lea
+    try {
+        localStorage.setItem('divide_las_ba_fork_state', JSON.stringify(forkedState));
+    } catch (err) {
+        console.error('Error al guardar fork en localStorage:', err);
+    }
+    
+    // Abrir nueva pestaña
+    window.open(window.location.origin + '/', '_blank');
+    
+    // Resetear la pestaña actual
+    window.location.reload();
+}
+
+window.showForkModal = showForkModal;
