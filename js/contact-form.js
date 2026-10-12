@@ -340,26 +340,15 @@ function openContactMagicLinkModal(email) {
         attachFormHandlers();
     }
     
-    function renderSent(sentEmail) {
-        modal.innerHTML = `
-            <div style="
-                background: white; padding: 30px;
-                border-radius: 8px; max-width: 400px; width: 90%;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                position: relative; text-align: center;
-            ">
-                <button id="contact-magic-close" style="
-                    position: absolute; top: 10px; right: 15px;
-                    background: none; border: none;
-                    font-size: 24px; cursor: pointer; color: #999;
-                ">×</button>
-                <h3 style="margin: 10px 0;">Revisá tu correo</h3>
-                <p style="color: #666; font-size: 14px;">
-                    Te enviamos un enlace a <strong>${sentEmail}</strong>.
-                    Hacé clic en el enlace para acceder y enviar tu mensaje de contacto.
-                </p>
-            </div>
-        `;
+        function renderSent(sentEmail) {
+        // Reutilizamos el template estándar del magic link de auth.js
+        // (idéntico al que aparece en "Cargar mi propuesta"), cambiando
+        // el texto de la acción a "verificar tu correo electrónico".
+        const contenido = getMagicLinkSentHTML(
+            sentEmail,
+            'verificar tu correo electrónico y poder enviar un mensaje de contacto'
+        );
+        modal.innerHTML = wrapAuthModalContent(contenido, 'contact-magic-close');
         document.getElementById('contact-magic-close').addEventListener('click', closeModal);
     }
     
