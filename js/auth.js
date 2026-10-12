@@ -717,6 +717,8 @@ window.updateAuthUI = updateAuthUI;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 window.setCurrentProposal = (p) => { currentProposal = p; };
+window.getMagicLinkSentHTML = getMagicLinkSentHTML;
+window.wrapAuthModalContent = wrapAuthModalContent;
 
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof updateAuthUI === 'function') {
