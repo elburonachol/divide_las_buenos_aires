@@ -4,6 +4,8 @@
  * Responsabilidades:
  * - Generación del mapa compuesto (PBA + inset GBA/CABA + rectángulo + líneas)
  * - Generación de la tabla comparativa como imagen
+ * - Pre-generación en segundo plano (prefetch) del mapa
+ * - Caché del mapa generado para reutilizarlo en el modal de compartir
  *
  * DEPENDENCIAS:
  * - share-utils.js (constantes, mmToPx, mercatorToLatLng, sanitizeFilename)
@@ -29,19 +31,125 @@ const OTRAS_PROVINCIAS = [
     'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'
 ];
 
-// =============================================
-// GENERACIÓN DEL MAPA
-// =============================================
+/**
+ * Grosor del borde GBA en milímetros sobre la imagen final (210mm de ancho).
+ * En píxeles: 0.3 mm × SHARE_IMG_PX_PER_MM.
+ */
+const GBA_BORDER_MM = 0.3;
 
 /**
- * CREA EL MAPA COMPUESTO (PBA + INSET GBA/CABA)
- * - Mapa grande: todo PBA (y comunas si están incluidas) coloreado.
- * - Inset: zoom del AMBA, también coloreado.
- * - Rectángulo y dos líneas verticales en negro, dibujados SOBRE el canvas.
+ * Milisegundos de espera máxima para que carguen los tiles del IGN
+ * antes de capturar el canvas. Si la red está lenta, se captura igual.
+ */
+const TIMEOUT_TILES_MS = 5000;
+
+// =============================================
+// CACHÉ DEL MAPA (PREFETCH)
+// =============================================
+// 
+// El mapa tarda varios segundos en generarse (por la espera de tiles).
+// Para mejorar la UX, exponemos `preGenerateMapImage()` que arranca la
+// generación en segundo plano. Cuando el usuario llega al modal de
+// compartir, `generateMapImage()` reutiliza el resultado cacheado.
+// 
+// El caché se invalida cuando:
+//   - La propuesta cambia (vía invalidateMapImageCache() desde notifyStateChange)
+//   - La generación falla
+// =============================================
+
+let _cachedMapImagePromise = null;
+
+/**
+ * INVALIDA EL CACHÉ DEL MAPA
+ * Debe llamarse cuando la propuesta del usuario cambia (drag&drop,
+ * cambio de cantidad de divisiones, etc.) para evitar usar una imagen
+ * desactualizada.
+ */
+function invalidateMapImageCache() {
+    _cachedMapImagePromise = null;
+}
+
+/**
+ * ARRANCA LA GENERACIÓN DEL MAPA EN SEGUNDO PLANO
+ * Si ya hay un caché válido, no hace nada.
+ * @returns {Promise<HTMLCanvasElement>|null}
+ */
+function preGenerateMapImage() {
+    if (_cachedMapImagePromise) return _cachedMapImagePromise;
+    
+    console.log('🚀 Pre-generando mapa en segundo plano...');
+    _cachedMapImagePromise = _generateMapImageInternal().catch(err => {
+        console.error('❌ Error pre-generando mapa:', err);
+        _cachedMapImagePromise = null;
+        throw err;
+    });
+    return _cachedMapImagePromise;
+}
+
+/**
+ * GENERA (O REUTILIZA) LA IMAGEN DEL MAPA
+ * API pública. Si hay una promesa cacheada, la reutiliza.
  * @returns {Promise<HTMLCanvasElement>}
  */
 async function generateMapImage() {
+    if (_cachedMapImagePromise) {
+        try {
+            return await _cachedMapImagePromise;
+        } catch (e) {
+            _cachedMapImagePromise = null;
+        }
+    }
+    return await _generateMapImageInternal();
+}
+
+// =============================================
+// GENERACIÓN DEL MAPA (INTERNA)
+// =============================================
+
+/**
+ * ESPERA ACTIVA HASTA QUE CARGUEN LOS TILES O SE AGOTE EL TIMEOUT
+ * Usa un enfoque de sondeo cada 250ms sobre el estado interno de Leaflet.
+ */
+async function waitForTilesToLoad(map, timeoutMs) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        let stillLoading = false;
+        map.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+                // Leaflet marca _loading cuando hay peticiones en vuelo.
+                // Si el layer no expone _loading (versiones nuevas), lo ignoramos.
+                if (layer._loading === true) stillLoading = true;
+            }
+        });
+        if (!stillLoading) return;
+        await new Promise(res => setTimeout(res, 250));
+    }
+}
+
+/**
+ * CREA EL MAPA COMPUESTO (PBA + INSET GBA/CABA)
+ * 
+ * NOTA SOBRE EL FONDO DEL IGN:
+ * ------------------------------------------------------------------
+ * El fondo del IGN se agrega con las dos llamadas
+ * `L.tileLayer(IGN_TILE_URL, ...).addTo(...)` que aparecen más abajo.
+ * 
+ * Para DESACTIVAR el fondo del IGN (si en algún momento tarda demasiado
+ * o falla por CORS), comentá o eliminá esas DOS líneas. El resto del
+ * código (colores de divisiones, bordes GBA, rectángulo y líneas
+ * diagonales) sigue funcionando igual y el mapa se exportará sobre
+ * fondo blanco.
+ * 
+ * Adicionalmente, podés reducir el valor de TIMEOUT_TILES_MS a 0
+ * para saltarte la espera de tiles.
+ * ------------------------------------------------------------------
+ * 
+ * @returns {Promise<HTMLCanvasElement>}
+ */
+async function _generateMapImageInternal() {
     console.log('🗺️ Generando imagen del mapa...');
+
+    const borderPx = GBA_BORDER_MM * SHARE_IMG_PX_PER_MM;
 
     // Contenedor principal (fuera de pantalla)
     const container = document.createElement('div');
@@ -84,21 +192,36 @@ async function generateMapImage() {
     const mainBounds = L.latLngBounds(mainSW, mainNE);
     mainMap.fitBounds(mainBounds, { animate: false, padding: [0, 0] });
 
+    // ⚠️ FONDO DEL IGN — Comentar esta línea para desactivar el fondo:
     L.tileLayer(IGN_TILE_URL, { crossOrigin: true, maxZoom: 18 }).addTo(mainMap);
 
-    // Estilo común para PBA
+    /**
+     * ESTILO DE PARTIDOS DE PBA EN EL MAPA PRINCIPAL
+     * - Asignados: color de la división con borde transparente.
+     * - GBA (campo `properties.gba === true`): borde negro de 0.3mm
+     *   superpuesto, aunque estén asignados a una división.
+     * - No asignados: fondo blanco con borde gris fino.
+     */
     const mainPbaStyle = (feature) => {
         const deptName = feature.properties.nam;
         const groupId = getDepartmentGroupId(deptName);
+        const isGBA = feature.properties.gba === true;
+        const borderColor = isGBA ? '#000000' : 'transparent';
+        const borderWeight = isGBA ? borderPx : 0;
+
         if (groupId) {
             return {
                 fillColor: departmentGroups[groupId].color,
                 fillOpacity: 0.8,
-                color: 'transparent',
-                weight: 0
+                color: borderColor,
+                weight: borderWeight
             };
         }
-        return { fillOpacity: 0, color: '#ccc', weight: 0.3 };
+        return {
+            fillOpacity: 0,
+            color: isGBA ? '#000000' : '#ccc',
+            weight: isGBA ? borderPx : 0.3
+        };
     };
 
     L.geoJSON(allDepartments, {
@@ -107,7 +230,7 @@ async function generateMapImage() {
         renderer: L.canvas({ padding: 0.5 })
     }).addTo(mainMap);
 
-    // Comunas de CABA: se agregan si el usuario las incluyó
+    // Comunas de CABA: SIEMPRE tienen borde negro de 0.3mm (todas son GBA)
     if (typeof comunasIncluidas !== 'undefined' && comunasIncluidas
         && typeof comunasCABA !== 'undefined' && comunasCABA.length > 0) {
         const mainComunaStyle = (feature) => {
@@ -117,11 +240,11 @@ async function generateMapImage() {
                 return {
                     fillColor: departmentGroups[groupId].color,
                     fillOpacity: 0.8,
-                    color: 'transparent',
-                    weight: 0
+                    color: '#000000',
+                    weight: borderPx
                 };
             }
-            return { fillOpacity: 0, color: '#ccc', weight: 0.3 };
+            return { fillOpacity: 0, color: '#000000', weight: borderPx };
         };
         L.geoJSON(comunasCABA, {
             style: mainComunaStyle,
@@ -162,20 +285,29 @@ async function generateMapImage() {
     const insetBounds = L.latLngBounds(insetSW, insetNE);
     insetMap.fitBounds(insetBounds, { animate: false, padding: [0, 0] });
 
+    // ⚠️ FONDO DEL IGN — Comentar esta línea para desactivar el fondo:
     L.tileLayer(IGN_TILE_URL, { crossOrigin: true, maxZoom: 18 }).addTo(insetMap);
 
     const insetPbaStyle = (feature) => {
         const deptName = feature.properties.nam;
         const groupId = getDepartmentGroupId(deptName);
+        const isGBA = feature.properties.gba === true;
+        const borderColor = isGBA ? '#000000' : 'transparent';
+        const borderWeight = isGBA ? borderPx : 0;
+
         if (groupId) {
             return {
                 fillColor: departmentGroups[groupId].color,
                 fillOpacity: 0.85,
-                color: 'transparent',
-                weight: 0
+                color: borderColor,
+                weight: borderWeight
             };
         }
-        return { fillOpacity: 0, color: '#999', weight: 0.2 };
+        return {
+            fillOpacity: 0,
+            color: isGBA ? '#000000' : '#999',
+            weight: isGBA ? borderPx : 0.2
+        };
     };
 
     L.geoJSON(allDepartments, {
@@ -193,11 +325,11 @@ async function generateMapImage() {
                 return {
                     fillColor: departmentGroups[groupId].color,
                     fillOpacity: 0.85,
-                    color: 'transparent',
-                    weight: 0
+                    color: '#000000',
+                    weight: borderPx
                 };
             }
-            return { fillOpacity: 0, color: '#999', weight: 0.2 };
+            return { fillOpacity: 0, color: '#000000', weight: borderPx };
         };
         L.geoJSON(comunasCABA, {
             style: insetComunaStyle,
@@ -212,8 +344,11 @@ async function generateMapImage() {
         insetMap.invalidateSize();
     }, 300);
 
-    // Esperar carga de tiles + render de canvas
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    // Esperar tiles (activo) + margen de seguridad para el render
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await waitForTilesToLoad(mainMap, TIMEOUT_TILES_MS);
+    await waitForTilesToLoad(insetMap, TIMEOUT_TILES_MS);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Capturar
     console.log('📸 Capturando imagen...');
@@ -227,9 +362,12 @@ async function generateMapImage() {
         logging: false
     });
 
-    // Dibujar rectángulo y líneas SOBRE el canvas capturado.
-    // Se usa setTransform para asegurarse de que no haya transformaciones
-    // residuales, y pxPerMm derivado del canvas real (robusto a cambios de escala).
+    // =============================================
+    // DIBUJO DE RECTÁNGULO Y LÍNEAS DIAGONALES
+    // =============================================
+    // Estas figuras se dibujan SOBRE el canvas ya capturado, para que
+    // no interfieran con la captura de Leaflet y se vean nítidas.
+    // =============================================
     const ctx = canvas.getContext('2d');
     const pxPerMm = canvas.width / SHARE_IMG_WIDTH_MM;
 
@@ -248,17 +386,31 @@ async function generateMapImage() {
     );
     ctx.stroke();
 
-    // Línea 1 (borde negro 0.4mm)
+    // Línea 1: diagonal del extremo superior derecho al extremo
+    // inferior izquierdo de su caja delimitadora.
     ctx.lineWidth = 0.4 * pxPerMm;
     ctx.beginPath();
-    ctx.moveTo(LINE1_POS.left * pxPerMm, LINE1_POS.top * pxPerMm);
-    ctx.lineTo(LINE1_POS.left * pxPerMm, (LINE1_POS.top + LINE1_POS.height) * pxPerMm);
+    ctx.moveTo(
+        (LINE1_POS.left + LINE1_POS.width) * pxPerMm,
+        LINE1_POS.top * pxPerMm
+    );
+    ctx.lineTo(
+        LINE1_POS.left * pxPerMm,
+        (LINE1_POS.top + LINE1_POS.height) * pxPerMm
+    );
     ctx.stroke();
 
-    // Línea 2 (borde negro 0.4mm)
+    // Línea 2: diagonal del extremo superior izquierdo al extremo
+    // inferior derecho de su caja delimitadora.
     ctx.beginPath();
-    ctx.moveTo(LINE2_POS.left * pxPerMm, LINE2_POS.top * pxPerMm);
-    ctx.lineTo(LINE2_POS.left * pxPerMm, (LINE2_POS.top + LINE2_POS.height) * pxPerMm);
+    ctx.moveTo(
+        LINE2_POS.left * pxPerMm,
+        LINE2_POS.top * pxPerMm
+    );
+    ctx.lineTo(
+        (LINE2_POS.left + LINE2_POS.width) * pxPerMm,
+        (LINE2_POS.top + LINE2_POS.height) * pxPerMm
+    );
     ctx.stroke();
 
     ctx.restore();
@@ -330,5 +482,7 @@ async function generateTableImage() {
 
 window.generateMapImage = generateMapImage;
 window.generateTableImage = generateTableImage;
+window.preGenerateMapImage = preGenerateMapImage;
+window.invalidateMapImageCache = invalidateMapImageCache;
 
 console.log('✅ Generador de imágenes de compartir inicializado');
