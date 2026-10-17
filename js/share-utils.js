@@ -35,17 +35,17 @@ const MAIN_MAP_BOUNDS = {
 
 // Coordenadas del mapa pequeño (inset)
 const INSET_MAP_BOUNDS = {
-    west: -6583589.694,
-    south: -4178208.412,
-    east: -6429589.694,
-    north: -4062755.819
+    west: -6576949.406,
+    south: -4173980.743,
+    east: -6444325.665,
+    north: -4079519.531
 };
 
 // Posiciones y dimensiones en mm
-const INSET_POS = { left: 63.016, top: 208.706, width: 140.000, height: 104.957 };
-const RECT_POS  = { left: 119.388, top: 31.569, width: 46.492, height: 29.847 };
-const LINE1_POS = { left: 62.866, top: 31.269, width: 56.222, height: 176.987 };
-const LINE2_POS = { left: 166.180, top: 31.269, width: 36.986, height: 176.987 };
+const INSET_POS = { left: 55.656, top: 208.706, width: 147.360, height: 104.957 };
+const RECT_POS  = { left: 127.974, top: 41.382, width: 34.226, height: 24.327 };
+const LINE1_POS = { left: 55.506, top: 41.232, width: 72.018, height: 167.024 };
+const LINE2_POS = { left: 162.651, top: 41.232, width: 40.515, height: 167.024 };
 
 // URL de la capa base oficial del IGN (mapa base gris)
 // IMPORTANTE: el endpoint es TMS, no XYZ, por lo que Leaflet requiere {-y}
