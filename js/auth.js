@@ -169,11 +169,27 @@ function applyProposalToUI(proposal, options = {}) {
         // 2. Actualizar el estado global
         currentDivisionCount = proposal.cantidad_divisiones || 3;
         comunasIncluidas = proposal.incluye_comunas_caba || false;
-        
-        // 3. Reconstruir las cajas de división
+
+        // 3. Sincronizar el checkbox de comunas y, si corresponde,
+        //    mostrar las comunas ANTES de reconstruir las divisiones
+        //    (así están disponibles en el listado y en el mapa).
+        const comunasCheckbox = document.getElementById('toggle-comunas');
+        if (comunasCheckbox) comunasCheckbox.checked = comunasIncluidas;
+
+        if (comunasIncluidas) {
+            if (typeof showComunas === 'function') {
+                showComunas();
+            }
+        } else {
+            if (typeof hideComunas === 'function' && comunasVisible) {
+                hideComunas();
+            }
+        }
+
+        // 4. Reconstruir las cajas de división
         initializeDivisionBoxes(currentDivisionCount);
 
-        // 4. Asignar nombres a cada división
+        // 5. Asignar nombres a cada división
         if (proposal.nombres_divisiones && Array.isArray(proposal.nombres_divisiones)) {
             proposal.nombres_divisiones.forEach((nombre, index) => {
                 const groupId = index + 1;
@@ -185,7 +201,7 @@ function applyProposalToUI(proposal, options = {}) {
             });
         }
 
-        // 5. Asignar departamentos a sus divisiones
+        // 6. Asignar departamentos Y comunas a sus divisiones
         if (proposal.departamentos_por_division) {
             Object.keys(proposal.departamentos_por_division).forEach(groupId => {
                 const deptNames = proposal.departamentos_por_division[groupId];
@@ -194,14 +210,15 @@ function applyProposalToUI(proposal, options = {}) {
                     if (divisionList) {
                         divisionList.innerHTML = '';
                         deptNames.forEach(deptName => {
-                            const dept = allDepartments.find(d => d.properties.nam === deptName);
-                            if (dept) {
-                                const isGBA = gbaCodes.includes(dept.properties.cde);
+                            const element = findDepartmentOrComuna(deptName);
+                            if (element) {
+                                const isComuna = comunasCABA.includes(element);
+                                const isGBA = !isComuna && gbaCodes.includes(element.properties.cde);
                                 const item = document.createElement('div');
                                 item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
                                 item.textContent = deptName;
                                 item.setAttribute('data-dept-name', deptName);
-                                item.setAttribute('data-dept-code', dept.properties.cde);
+                                item.setAttribute('data-dept-code', element.properties.cde);
                                 divisionList.appendChild(item);
                             }
                         });
@@ -211,7 +228,8 @@ function applyProposalToUI(proposal, options = {}) {
             });
         }
 
-        // 6. Reconstruir el listado principal
+        // 7. Reconstruir el listado principal con los elementos NO asignados
+        //    (incluyendo comunas si están incluidas).
         const listContainer = document.getElementById('all-departments-list');
         if (listContainer) {
             listContainer.innerHTML = '';
@@ -220,10 +238,16 @@ function applyProposalToUI(proposal, options = {}) {
                 depts.forEach(name => assignedDepts.add(name));
             });
 
-            allDepartments.forEach(feature => {
+            const todosLosElementos = [...allDepartments];
+            if (comunasIncluidas && typeof comunasCABA !== 'undefined') {
+                todosLosElementos.push(...comunasCABA);
+            }
+
+            todosLosElementos.forEach(feature => {
                 const name = feature.properties.nam;
                 if (!assignedDepts.has(name)) {
-                    const isGBA = gbaCodes.includes(feature.properties.cde);
+                    const isComuna = comunasCABA.includes(feature);
+                    const isGBA = !isComuna && gbaCodes.includes(feature.properties.cde);
                     const item = document.createElement('div');
                     item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
                     item.textContent = name;
@@ -235,17 +259,14 @@ function applyProposalToUI(proposal, options = {}) {
             sortMainList();
         }
 
-        // 7. Sincronizar controles
+        // 8. Sincronizar controles
         const divisionInput = document.getElementById('division-count');
         if (divisionInput) divisionInput.value = currentDivisionCount;
 
-        const comunasCheckbox = document.getElementById('toggle-comunas');
-        if (comunasCheckbox) comunasCheckbox.checked = comunasIncluidas;
-        
-        // 8. Notificar
+        // 9. Notificar
         notifyStateChange();
         updateDivisionsTitle();
-        
+
         console.log('✅ Propuesta aplicada a la interfaz.');
     } finally {
         window.isApplyingProposal = false;
