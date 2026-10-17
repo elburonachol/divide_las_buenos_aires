@@ -218,6 +218,12 @@ function showPublishModal() {
         return;
     }
 
+    // Invalida cualquier mapa pre-generado de una sesión anterior,
+    // para asegurar que la imagen refleje la propuesta actual.
+    if (typeof window.invalidateMapImageCache === 'function') {
+        window.invalidateMapImageCache();
+    }
+
     const proposal = serializeProposal();
     const currentProp = window.currentProposal();
     const defaultTitle = currentProp ? currentProp.titulo : 'Mi propuesta';
@@ -341,6 +347,18 @@ function showPublishModal() {
 
     document.body.appendChild(modal);
 
+    // Al aceptar los términos, empezamos a generar el mapa en segundo
+    // plano. Cuando el usuario llegue al modal de compartir, el mapa
+    // ya estará listo (o casi listo) y no tendrá que esperar.
+    const termsCheckPreGen = document.getElementById('publish-terms-check');
+    if (termsCheckPreGen) {
+        termsCheckPreGen.addEventListener('change', function() {
+            if (this.checked && typeof window.preGenerateMapImage === 'function') {
+                window.preGenerateMapImage();
+            }
+        });
+    }
+    
     const titleInput = document.getElementById('publish-title');
     const nameInput = document.getElementById('publish-name');
     const showNameCheck = document.getElementById('publish-show-name');
