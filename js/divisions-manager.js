@@ -85,17 +85,19 @@ function initializeDivisionBoxes(newCount) {
             }
         });
         
-        // Restaurar departamentos si esta división existía antes
+        // Restaurar departamentos (PBA o comunas de CABA) si esta división existía antes
         if (previousGroups[i] && previousGroups[i].departments) {
             const divisionList = document.getElementById(`division-${i}`);
             previousGroups[i].departments.forEach(deptName => {
-                const dept = allDepartments.find(d => d.properties.nam === deptName);
-                const isGBA = dept && gbaCodes.includes(dept.properties.cde);
+                const element = findDepartmentOrComuna(deptName);
+                const isComuna = element && comunasCABA.includes(element);
+                const isGBA = element && !isComuna && gbaCodes.includes(element.properties.cde);
                 
                 const item = document.createElement('div');
                 item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
                 item.textContent = deptName;
                 item.setAttribute('data-dept-name', deptName);
+                if (element) item.setAttribute('data-dept-code', element.properties.cde);
                 divisionList.appendChild(item);
             });
             // Ordenar alfabéticamente los departamentos en la división
@@ -179,16 +181,17 @@ function sortMainList() {
 function returnDepartmentToMainList(departmentName) {
     const listContainer = document.getElementById('all-departments-list');
     
-    // Recuperar datos completos del departamento
-    const dept = allDepartments.find(d => d.properties.nam === departmentName);
-    const isGBA = dept && gbaCodes.includes(dept.properties.cde);
+    // Recuperar datos completos del departamento o comuna
+    const element = findDepartmentOrComuna(departmentName);
+    const isComuna = element && comunasCABA.includes(element);
+    const isGBA = element && !isComuna && gbaCodes.includes(element.properties.cde);
     
     // Crear elemento para el listado
     const item = document.createElement('div');
     item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
     item.textContent = departmentName;
     item.setAttribute('data-dept-name', departmentName);
-    item.setAttribute('data-dept-code', dept ? dept.properties.cde : '');
+    item.setAttribute('data-dept-code', element ? element.properties.cde : '');
     
     listContainer.appendChild(item);
     sortMainList();
