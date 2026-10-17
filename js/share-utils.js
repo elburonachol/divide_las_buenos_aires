@@ -48,7 +48,9 @@ const LINE1_POS = { left: 62.866, top: 31.269, width: 56.222, height: 176.987 };
 const LINE2_POS = { left: 166.180, top: 31.269, width: 36.986, height: 176.987 };
 
 // URL de la capa base oficial del IGN (mapa base gris)
-const IGN_TILE_URL = 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{y}.png';
+// IMPORTANTE: el endpoint es TMS, no XYZ, por lo que Leaflet requiere {-y}
+// (Y invertido). Con {y} las peticiones devuelven 404 y el mapa sale en blanco.
+const IGN_TILE_URL = 'https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/mapabase_gris@EPSG%3A3857@png/{z}/{x}/{-y}.png';
 
 // =============================================
 // CONVERSIONES
