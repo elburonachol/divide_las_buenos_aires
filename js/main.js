@@ -214,6 +214,12 @@ function notifyStateChange() {
             showForkModal();
         }
     }
+    
+    // Invalidar el mapa pre-generado: cualquier cambio en la propuesta
+    // implica que la imagen cacheada quedó obsoleta.
+    if (typeof window.invalidateMapImageCache === 'function') {
+        window.invalidateMapImageCache();
+    }
 }
 
 /**
