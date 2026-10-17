@@ -218,6 +218,20 @@ function obtenerCodigoCdePorNombre(nombreDepartamento) {
 }
 
 /**
+ * BUSCA UN ELEMENTO (DEPARTAMENTO DE PBA O COMUNA DE CABA) POR SU NOMBRE
+ * Las comunas de CABA viven en un array distinto (`comunasCABA`), por lo
+ * que este helper centraliza la búsqueda y evita que se pierdan al
+ * reconstruir divisiones desde una propuesta guardada.
+ * @param {string} nombre - Nombre del departamento o comuna
+ * @returns {Object|null} - Feature GeoJSON o null si no se encuentra
+ */
+function findDepartmentOrComuna(nombre) {
+    return allDepartments.find(d => d.properties.nam === nombre)
+        || comunasCABA.find(c => c.properties.nam === nombre)
+        || null;
+}
+
+/**
  * OBTIENE UN DEPARTAMENTO COMPLETO POR SU CÓDIGO CDE
  * @param {string} cde - Código CDE del departamento
  * @returns {Object|null} - Departamento encontrado o null
