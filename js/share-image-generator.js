@@ -32,10 +32,16 @@ const OTRAS_PROVINCIAS = [
 ];
 
 /**
- * Grosor del borde GBA en milímetros sobre la imagen final (210mm de ancho).
- * En píxeles: 0.3 mm × SHARE_IMG_PX_PER_MM.
+ * Grosor del borde negro por defecto de cualquier departamento, en mm
+ * sobre la imagen final (210mm de ancho).
  */
-const GBA_BORDER_MM = 0.3;
+const DEFAULT_BORDER_MM = 0.1;
+
+/**
+ * Grosor del borde negro de los partidos del GBA y las comunas de CABA,
+ * en mm sobre la imagen final (210mm de ancho).
+ */
+const GBA_BORDER_MM = 0.2;
 
 /**
  * Milisegundos de espera máxima para que carguen los tiles del IGN
@@ -136,7 +142,7 @@ async function waitForTilesToLoad(map, timeoutMs) {
  * 
  * Para DESACTIVAR el fondo del IGN (si en algún momento tarda demasiado
  * o falla por CORS), comentá o eliminá esas DOS líneas. El resto del
- * código (colores de divisiones, bordes GBA, rectángulo y líneas
+ * código (colores de divisiones, bordes, rectángulo y líneas
  * diagonales) sigue funcionando igual y el mapa se exportará sobre
  * fondo blanco.
  * 
@@ -149,7 +155,9 @@ async function waitForTilesToLoad(map, timeoutMs) {
 async function _generateMapImageInternal() {
     console.log('🗺️ Generando imagen del mapa...');
 
-    const borderPx = GBA_BORDER_MM * SHARE_IMG_PX_PER_MM;
+    // Grosores en píxeles (mm × px/mm)
+    const defaultBorderPx = DEFAULT_BORDER_MM * SHARE_IMG_PX_PER_MM;
+    const gbaBorderPx = GBA_BORDER_MM * SHARE_IMG_PX_PER_MM;
 
     // Contenedor principal (fuera de pantalla)
     const container = document.createElement('div');
@@ -197,30 +205,30 @@ async function _generateMapImageInternal() {
 
     /**
      * ESTILO DE PARTIDOS DE PBA EN EL MAPA PRINCIPAL
-     * - Asignados: color de la división con borde transparente.
-     * - GBA (campo `properties.gba === true`): borde negro de 0.3mm
-     *   superpuesto, aunque estén asignados a una división.
-     * - No asignados: fondo blanco con borde gris fino.
+     * - Todos los partidos llevan borde negro de DEFAULT_BORDER_MM.
+     * - Los partidos del GBA (`properties.gba === true`) llevan borde
+     *   negro de GBA_BORDER_MM (levemente más grueso).
+     * - Asignados a una división: se rellena con el color del grupo.
+     * - No asignados: fondo transparente (queda visible el mapa base).
      */
     const mainPbaStyle = (feature) => {
         const deptName = feature.properties.nam;
         const groupId = getDepartmentGroupId(deptName);
         const isGBA = feature.properties.gba === true;
-        const borderColor = isGBA ? '#000000' : 'transparent';
-        const borderWeight = isGBA ? borderPx : 0;
+        const borderWeight = isGBA ? gbaBorderPx : defaultBorderPx;
 
         if (groupId) {
             return {
                 fillColor: departmentGroups[groupId].color,
                 fillOpacity: 0.8,
-                color: borderColor,
+                color: '#000000',
                 weight: borderWeight
             };
         }
         return {
             fillOpacity: 0,
-            color: isGBA ? '#000000' : '#ccc',
-            weight: isGBA ? borderPx : 0.3
+            color: '#000000',
+            weight: borderWeight
         };
     };
 
@@ -230,7 +238,8 @@ async function _generateMapImageInternal() {
         renderer: L.canvas({ padding: 0.5 })
     }).addTo(mainMap);
 
-    // Comunas de CABA: SIEMPRE tienen borde negro de 0.3mm (todas son GBA)
+    // Comunas de CABA: SIEMPRE llevan borde negro de GBA_BORDER_MM
+    // (todas las comunas son parte del GBA).
     if (typeof comunasIncluidas !== 'undefined' && comunasIncluidas
         && typeof comunasCABA !== 'undefined' && comunasCABA.length > 0) {
         const mainComunaStyle = (feature) => {
@@ -241,10 +250,10 @@ async function _generateMapImageInternal() {
                     fillColor: departmentGroups[groupId].color,
                     fillOpacity: 0.8,
                     color: '#000000',
-                    weight: borderPx
+                    weight: gbaBorderPx
                 };
             }
-            return { fillOpacity: 0, color: '#000000', weight: borderPx };
+            return { fillOpacity: 0, color: '#000000', weight: gbaBorderPx };
         };
         L.geoJSON(comunasCABA, {
             style: mainComunaStyle,
@@ -288,25 +297,28 @@ async function _generateMapImageInternal() {
     // ⚠️ FONDO DEL IGN — Comentar esta línea para desactivar el fondo:
     L.tileLayer(IGN_TILE_URL, { crossOrigin: true, maxZoom: 18 }).addTo(insetMap);
 
+    /**
+     * ESTILO DE PARTIDOS DE PBA EN EL INSET
+     * Mismas reglas de borde que en el mapa principal.
+     */
     const insetPbaStyle = (feature) => {
         const deptName = feature.properties.nam;
         const groupId = getDepartmentGroupId(deptName);
         const isGBA = feature.properties.gba === true;
-        const borderColor = isGBA ? '#000000' : 'transparent';
-        const borderWeight = isGBA ? borderPx : 0;
+        const borderWeight = isGBA ? gbaBorderPx : defaultBorderPx;
 
         if (groupId) {
             return {
                 fillColor: departmentGroups[groupId].color,
                 fillOpacity: 0.85,
-                color: borderColor,
+                color: '#000000',
                 weight: borderWeight
             };
         }
         return {
             fillOpacity: 0,
-            color: isGBA ? '#000000' : '#999',
-            weight: isGBA ? borderPx : 0.2
+            color: '#000000',
+            weight: borderWeight
         };
     };
 
@@ -316,6 +328,7 @@ async function _generateMapImageInternal() {
         renderer: L.canvas({ padding: 0.5 })
     }).addTo(insetMap);
 
+    // Comunas de CABA en el inset: siempre borde negro de GBA_BORDER_MM
     if (typeof comunasIncluidas !== 'undefined' && comunasIncluidas
         && typeof comunasCABA !== 'undefined' && comunasCABA.length > 0) {
         const insetComunaStyle = (feature) => {
@@ -326,10 +339,10 @@ async function _generateMapImageInternal() {
                     fillColor: departmentGroups[groupId].color,
                     fillOpacity: 0.85,
                     color: '#000000',
-                    weight: borderPx
+                    weight: gbaBorderPx
                 };
             }
-            return { fillOpacity: 0, color: '#000000', weight: borderPx };
+            return { fillOpacity: 0, color: '#000000', weight: gbaBorderPx };
         };
         L.geoJSON(comunasCABA, {
             style: insetComunaStyle,
