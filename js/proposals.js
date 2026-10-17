@@ -405,15 +405,19 @@ function showPublishModal() {
             if (typeof window.setCurrentProposal === 'function') {
                 window.setCurrentProposal(result);
             }
-            const shareCode = result.user_share_code;
-            const shareUrl = `${window.location.origin}/propuesta/${shareCode}`;
             
-            shareUrlDiv.textContent = shareUrl;
-            resultDiv.style.display = 'block';
-            confirmBtn.style.display = 'none';
+            // Cerrar el modal de publicación y mostrar el modal de compartir
+            if (modal.parentNode) modal.parentNode.removeChild(modal);
             
             if (typeof window.updateAuthUI === 'function') {
                 window.updateAuthUI();
+            }
+            
+            // Mostrar el modal de compartir con las imágenes y redes sociales
+            if (typeof window.showShareModal === 'function') {
+                window.showShareModal(result);
+            } else {
+                console.error('❌ showShareModal no disponible');
             }
         } else {
             showError('Error al publicar la propuesta. Intentá nuevamente.');
