@@ -65,25 +65,26 @@ function initializeDivisionBoxes(newCount) {
 
         container.appendChild(groupBox);
         
-        // Configurar nombres editables con eventos
-        const editableName = groupBox.querySelector('.editable-division-name');
-        editableName.addEventListener('blur', function() {
-            departmentGroups[i].name = this.textContent;
-            updateComparisonTable();
-            // Salir del modo región existente si se edita el nombre
-            if (currentRegionType) {
-                document.getElementById('existing-regions').value = '';
-                currentRegionType = null;
-            }
-        });
-        
-        // Permitir Enter para guardar sin salir del campo
-        editableName.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.blur();
-            }
-        });
+        // En modo simplificado, los nombres de las divisiones NO son editables
+        if (window.isSimplifiedMode) {
+            editableName.setAttribute('contenteditable', 'false');
+            editableName.style.cursor = 'default';
+        } else {
+            editableName.addEventListener('blur', function() {
+                departmentGroups[i].name = this.textContent;
+                updateComparisonTable();
+                if (currentRegionType) {
+                    document.getElementById('existing-regions').value = '';
+                    currentRegionType = null;
+                }
+            });
+            editableName.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+        }
         
         // Restaurar departamentos (PBA o comunas de CABA) si esta división existía antes
         if (previousGroups[i] && previousGroups[i].departments) {
