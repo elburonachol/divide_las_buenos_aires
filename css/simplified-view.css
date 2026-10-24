@@ -183,3 +183,19 @@ body.simplified-mode #go-full-web-wrapper {
 .data-choice-modal .close-x:hover {
     color: #333;
 }
+
+/* =============================================
+   REPARTO HORIZONTAL EN VISTA SIMPLIFICADA
+   En modo simplificado, el listado de departamentos está
+   oculto. Mapa y cajas de división se reparten el ancho
+   disponible en partes iguales (50% / 50%).
+   En la web completa no se aplica esta regla.
+   ============================================= */
+
+body.simplified-mode #map-container {
+    flex: 1;
+}
+
+body.simplified-mode .divisions-column {
+    flex: 1;
+}
