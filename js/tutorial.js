@@ -93,7 +93,7 @@ function maybeShowTutorial() {
     const user = typeof window.currentUser === 'function' ? window.currentUser() : null;
     if (user) return;
     
-    const isSimplified = typeof window.isSimplifiedMode === 'function' && window.isSimplifiedMode();
+    const isSimplified = window.isSimplifiedMode === true;
     const cameFromSimplified = sessionStorage.getItem('divide_ba_came_from_simplified') === 'true';
     
     if (isSimplified) {
