@@ -65,6 +65,9 @@ function initializeDivisionBoxes(newCount) {
 
         container.appendChild(groupBox);
         
+        // Obtener referencia al nombre editable antes de usarla
+        const editableName = groupBox.querySelector('.editable-division-name');
+        
         // En modo simplificado, los nombres de las divisiones NO son editables
         if (window.isSimplifiedMode) {
             editableName.setAttribute('contenteditable', 'false');
