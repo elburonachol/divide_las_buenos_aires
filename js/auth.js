@@ -36,7 +36,14 @@ let currentEmail = '';
  */
 async function sendMagicLink(email, redirectPath = '') {
     try {
-        const baseUrl = window.location.origin + window.location.pathname;
+        // En modo simplificado, el magic link debe llevar SIEMPRE a la web
+        // completa (a "/"), nunca a "/propuesta/<code>". Así el usuario, al
+        // autenticarse, aterriza en la web completa y puede volver atrás con
+        // el botón del navegador a la versión simplificada original.
+        const inSimplified = window.isSimplifiedMode === true;
+        const baseUrl = inSimplified
+            ? window.location.origin + '/'
+            : window.location.origin + window.location.pathname;
         const redirectUrl = redirectPath 
             ? `${baseUrl}?redirect=${encodeURIComponent(redirectPath)}`
             : baseUrl;
