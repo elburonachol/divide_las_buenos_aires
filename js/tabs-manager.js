@@ -170,6 +170,12 @@ function initializeTabs() {
     const title = document.getElementById('app-title');
     if (title) {
         title.addEventListener('click', function() {
+            // En modo simplificado, el título lleva a la web completa
+            if (typeof isSimplifiedMode === 'function' && isSimplifiedMode()
+                && typeof goToFullWeb === 'function') {
+                goToFullWeb();
+                return;
+            }
             history.pushState({}, '', '/');
             activateTab('propuestas');
             window.scrollTo({ top: 0, behavior: 'smooth' });
