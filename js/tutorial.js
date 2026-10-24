@@ -6,6 +6,20 @@
  * - Tutorial paso a paso (6 pantallas) con spotlight
  * - Diferenciar entre tutorial de web completa y simplificada
  * - Persistencia de "ya vio el tutorial" en localStorage
+ *
+ * NOTAS DE DISEÑO:
+ * - El popup inicial aparece arriba a la izquierda (ver tutorial.css).
+ * - Los pasos pueden apuntar a UN selector (`selector`) o a VARIOS
+ *   (`selectors: [...]`). Con varios, se calcula el rectángulo envolvente
+ *   (union rect) para el spotlight y se hace scroll al primero.
+ * - Si el rectángulo destacado es más alto que el viewport, el scroll se
+ *   alinea con el TOP del elemento (no al centro), para que el usuario vea
+ *   el comienzo de la zona destacada.
+ * - El tooltip intenta posicionarse abajo → arriba → derecha → izquierda,
+ *   evitando SIEMPRE superponerse con el rectángulo destacado. La única
+ *   excepción es el paso 4 (tabla comparativa), que puede ser más alta que
+ *   el viewport y ocupa todo el ancho: allí el tooltip se superpone
+ *   (`forceOverlay: true`).
  */
 
 // =============================================
@@ -25,11 +39,16 @@ const TUTORIAL_PASOS_FULL = [
         texto: 'Acá podés explorar cómo se verían (las) Buenos Aires según la división propuesta y, haciendo click en departamentos puntuales, podés ver la información subyacente de los mismos'
     },
     {
-        selector: '.divisions-column',
+        // En la web completa se resaltan tanto las cajas de división
+        // como el listado de departamentos (que aparece a la derecha).
+        selectors: ['.divisions-column', '.list-column'],
         texto: 'Acá podés ver los colores de las potenciales divisiones, que se corresponden con el mapa; departamentos que pertenecen a cada potencial división; y los nombres de las potenciales divisiones, que son editables para el autor de la propuesta'
     },
     {
         selector: '.comparison-section',
+        // La tabla comparativa suele ocupar todo el ancho y ser más alta
+        // que el viewport: el tooltip se superpone (no hay otra opción).
+        forceOverlay: true,
         texto: 'Acá podés ver una comparación en tabla de algunas variables destacadas para esas potenciales divisiones y, también, respecto a otras provincias argentinas existentes. Hay algunas variables que se pueden presentar de más de una forma'
     },
     {
@@ -52,11 +71,14 @@ const TUTORIAL_PASOS_SIMPLIFIED = [
         texto: 'Acá podés explorar cómo se verían (las) Buenos Aires según la división propuesta y, haciendo click en departamentos puntuales, podés ver la información subyacente de los mismos'
     },
     {
+        // En la vista simplificada el listado de departamentos está oculto,
+        // así que solo se destaca la columna de divisiones.
         selector: '.divisions-column',
         texto: 'Acá podés ver las divisiones propuestas por otro usuario, con los colores respectivos en el mapa. En la web completa, acá también vas a encontrar el listado de departamentos, que no se incluye en ninguna división específica.'
     },
     {
         selector: '.comparison-section',
+        forceOverlay: true,
         texto: 'Acá podés ver una comparación en tabla de algunas variables destacadas para esas potenciales divisiones y, también, respecto a otras provincias argentinas existentes. Hay algunas variables que se pueden presentar de más de una forma'
     },
     {
@@ -80,6 +102,59 @@ let tutorialState = {
     tooltipEl: null,
     resizeHandler: null
 };
+
+// =============================================
+// HELPERS GEOMÉTRICOS
+// =============================================
+
+/**
+ * DEVUELVE LA LISTA DE ELEMENTOS OBJETIVO DE UN PASO.
+ * Un paso puede definir `selector` (uno solo) o `selectors` (varios).
+ * @param {Object} paso
+ * @returns {HTMLElement[]}
+ */
+function getStepTargets(paso) {
+    if (Array.isArray(paso.selectors)) {
+        return paso.selectors
+            .map(sel => document.querySelector(sel))
+            .filter(Boolean);
+    }
+    if (paso.selector) {
+        const el = document.querySelector(paso.selector);
+        return el ? [el] : [];
+    }
+    return [];
+}
+
+/**
+ * DEVUELVE EL RECTÁNGULO ENVOLVENTE (UNION RECT) DE VARIOS ELEMENTOS.
+ * Si recibe uno solo, devuelve su rect directamente.
+ * @param {HTMLElement[]} elements
+ * @returns {{top,left,right,bottom,width,height}|null}
+ */
+function getUnionRect(elements) {
+    if (!elements || elements.length === 0) return null;
+    if (elements.length === 1) {
+        const r = elements[0].getBoundingClientRect();
+        return {
+            top: r.top, left: r.left, right: r.right, bottom: r.bottom,
+            width: r.width, height: r.height
+        };
+    }
+    let top = Infinity, left = Infinity, right = -Infinity, bottom = -Infinity;
+    elements.forEach(el => {
+        const r = el.getBoundingClientRect();
+        top = Math.min(top, r.top);
+        left = Math.min(left, r.left);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+    });
+    return { top, left, right, bottom, width: right - left, height: bottom - top };
+}
+
+function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
 
 // =============================================
 // PUNTO DE ENTRADA
@@ -197,13 +272,22 @@ function showStep(index) {
     
     tutorialState.pasoActual = index;
     
-    const target = document.querySelector(paso.selector);
-    if (!target) {
+    const targets = getStepTargets(paso);
+    if (targets.length === 0) {
         if (index < tutorialState.pasos.length - 1) return showStep(index + 1);
         return endTutorial();
     }
     
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Alineación de scroll:
+    // - Si el rectángulo envolvente es más alto que el viewport,
+    //   alinear con el TOP del primer target (para que el usuario
+    //   vea el comienzo de la zona destacada).
+    // - Si no, centrar el target en el viewport.
+    const unionRect = getUnionRect(targets);
+    const viewportH = window.innerHeight;
+    const block = (unionRect.height > viewportH * 0.7) ? 'start' : 'center';
+    targets[0].scrollIntoView({ behavior: 'smooth', block });
+    
     setTimeout(() => positionCurrentStep(), 450);
 }
 
@@ -211,10 +295,10 @@ function positionCurrentStep() {
     const paso = tutorialState.pasos[tutorialState.pasoActual];
     if (!paso) return;
     
-    const target = document.querySelector(paso.selector);
-    if (!target) return;
+    const targets = getStepTargets(paso);
+    if (targets.length === 0) return;
     
-    const rect = target.getBoundingClientRect();
+    const rect = getUnionRect(targets);
     const padding = 6;
     
     const spotlight = tutorialState.spotlightEl;
@@ -266,27 +350,80 @@ function renderTooltip(paso, rect) {
     positionTooltip(rect);
 }
 
+/**
+ * POSICIONA EL TOOLTIP EVITANDO SUPERPOSICIÓN CON EL RECTÁNGULO DESTACADO.
+ * Orden de preferencia: abajo → arriba → derecha → izquierda → centrado.
+ * Excepción: si el paso tiene `forceOverlay: true`, se centra en el viewport
+ * (necesario para la tabla comparativa del paso 4, que ocupa todo el ancho
+ * y suele ser más alta que el viewport).
+ * 
+ * Si el tooltip no entra en ninguna de las posiciones "no solapadas"
+ * (por ejemplo, en pantallas muy chicas), se centra como último recurso.
+ */
 function positionTooltip(rect) {
     const tooltip = tutorialState.tooltipEl;
     const tooltipRect = tooltip.getBoundingClientRect();
     const margin = 14;
     const viewportH = window.innerHeight;
     const viewportW = window.innerWidth;
+    const step = tutorialState.pasos[tutorialState.pasoActual];
     
-    let top, left;
-    
-    if (rect.bottom + margin + tooltipRect.height < viewportH - 10) {
-        top = rect.bottom + margin;
-    } else if (rect.top - margin - tooltipRect.height > 10) {
-        top = rect.top - margin - tooltipRect.height;
-    } else {
-        top = Math.max(10, (viewportH - tooltipRect.height) / 2);
+    // Caso especial: overlay permitido (paso 4).
+    if (step.forceOverlay) {
+        const top = Math.max(10, (viewportH - tooltipRect.height) / 2);
+        const left = Math.max(10, (viewportW - tooltipRect.width) / 2);
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        return;
     }
     
-    left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-    if (left < 10) left = 10;
-    if (left + tooltipRect.width > viewportW - 10) left = viewportW - 10 - tooltipRect.width;
-    
+    // Intentar ABAJO del rectángulo destacado
+    if (rect.bottom + margin + tooltipRect.height < viewportH - 10) {
+        const top = rect.bottom + margin;
+        const left = clamp(
+            rect.left + (rect.width / 2) - (tooltipRect.width / 2),
+            10, viewportW - tooltipRect.width - 10
+        );
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        return;
+    }
+    // Intentar ARRIBA
+    if (rect.top - margin - tooltipRect.height > 10) {
+        const top = rect.top - margin - tooltipRect.height;
+        const left = clamp(
+            rect.left + (rect.width / 2) - (tooltipRect.width / 2),
+            10, viewportW - tooltipRect.width - 10
+        );
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        return;
+    }
+    // Intentar a la DERECHA (centrado vertical respecto al target)
+    if (rect.right + margin + tooltipRect.width < viewportW - 10) {
+        const left = rect.right + margin;
+        const top = clamp(
+            rect.top + (rect.height / 2) - (tooltipRect.height / 2),
+            10, viewportH - tooltipRect.height - 10
+        );
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        return;
+    }
+    // Intentar a la IZQUIERDA
+    if (rect.left - margin - tooltipRect.width > 10) {
+        const left = rect.left - margin - tooltipRect.width;
+        const top = clamp(
+            rect.top + (rect.height / 2) - (tooltipRect.height / 2),
+            10, viewportH - tooltipRect.height - 10
+        );
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+        return;
+    }
+    // Último recurso: centrado en el viewport (puede superponerse)
+    const top = Math.max(10, (viewportH - tooltipRect.height) / 2);
+    const left = Math.max(10, (viewportW - tooltipRect.width) / 2);
     tooltip.style.top = top + 'px';
     tooltip.style.left = left + 'px';
 }
