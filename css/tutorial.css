@@ -5,7 +5,7 @@
 .tutorial-prompt {
     position: fixed;
     top: 20px;
-    right: 20px;
+    left: 20px;
     background: rgba(20, 20, 20, 0.88);
     color: white;
     padding: 16px 18px 20px;
