@@ -19,9 +19,10 @@
 // DETECCIÓN DE MODO
 // =============================================
 
-function isSimplifiedMode() {
-    return window.isSimplifiedMode === true;
-}
+// El flag se calcula al cargar el archivo (antes de los DOMContentLoaded
+// de otros módulos) para que todos lean el valor correcto desde el inicio.
+// Es un booleano: true si estamos en /propuesta/<code>, false en el resto.
+window.isSimplifiedMode = /\/propuesta\/[a-z0-9]+/.test(window.location.pathname);
 
 // =============================================
 // APLICACIÓN DEL MODO
@@ -32,7 +33,7 @@ function isSimplifiedMode() {
  * Agrega la clase al body; el CSS se encarga de ocultar los controles.
  */
 function applySimplifiedMode() {
-    if (!isSimplifiedMode()) return;
+    if (window.isSimplifiedMode !== true) return;
     document.body.classList.add('simplified-mode');
     console.log('🔒 Modo simplificado activado');
 }
@@ -141,13 +142,12 @@ function navigateToFullWebWithProposal(proposal) {
 // =============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    if (isSimplifiedMode()) {
+    if (window.isSimplifiedMode === true) {
         applySimplifiedMode();
         setupGoFullWebButton();
     }
 });
 
-window.isSimplifiedMode = isSimplifiedMode;
 window.goToFullWeb = goToFullWeb;
 
 console.log('✅ Módulo de vista simplificada inicializado');
