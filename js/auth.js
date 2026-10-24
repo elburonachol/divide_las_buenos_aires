@@ -113,7 +113,6 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         // Cargar la propuesta del usuario
         currentProposal = await loadUserProposal();
         if (currentProposal) {
-            window.isViewingOthersProposal = false;
             applyProposalToUI(currentProposal, { isPublic: false });
         }
         
@@ -284,12 +283,6 @@ function updateProposalMeta(proposal, options) {
     const authorNameEl = document.getElementById('proposal-meta-author-name');
     
     if (!meta) return;
-    
-    if (options.isFork) {
-        // Fork: sin título ni autor (son del usuario original)
-        meta.style.display = 'none';
-        return;
-    }
     
     if (options.isPublic) {
         // Propuesta pública ajena: mostrar título + autor si corresponde
