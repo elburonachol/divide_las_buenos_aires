@@ -274,6 +274,12 @@ function initializeDragAndDrop() {
         document.getElementById(`division-${i + 1}`)
     );
 
+    // En modo simplificado no se permite arrastrar departamentos
+    if (window.isSimplifiedMode) {
+        console.log('🔒 Drag & drop deshabilitado en modo simplificado');
+        return;
+    }
+
     // Configurar lista principal de departamentos
     Sortable.create(allDepartmentsList, {
         group: {
