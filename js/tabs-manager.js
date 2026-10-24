@@ -171,7 +171,7 @@ function initializeTabs() {
     if (title) {
         title.addEventListener('click', function() {
             // En modo simplificado, el título lleva a la web completa
-            if (typeof isSimplifiedMode === 'function' && isSimplifiedMode()
+            if (window.isSimplifiedMode === true
                 && typeof goToFullWeb === 'function') {
                 goToFullWeb();
                 return;
