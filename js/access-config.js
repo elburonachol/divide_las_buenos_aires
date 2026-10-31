@@ -12,7 +12,7 @@
  *   a la web completa. La web simplificada es pública.
  */
 
-const ACCESS_MODE = 'public'; // <-- CAMBIA ESTE VALOR PARA ALTERNAR ENTRE MODOS
+const ACCESS_MODE = 'restricted_all'; // <-- CAMBIA ESTE VALOR PARA ALTERNAR ENTRE MODOS
 
 // Exponer la configuración globalmente
 window.ACCESS_CONFIG = {
