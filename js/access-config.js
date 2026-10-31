@@ -8,7 +8,7 @@
  * - 'public': Acceso libre para todos (comportamiento actual).
  * - 'restricted_all': Solo usuarios autenticados y autorizados (lista blanca)
  *   pueden acceder a la web completa y simplificada.
- * - 'restricted_full': Solo usuarios autenticados y autorizados pueden acceder
+ * - 'hybrid': Solo usuarios autenticados y autorizados pueden acceder
  *   a la web completa. La web simplificada es pública.
  */
 
