@@ -402,9 +402,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
+    <!-- Configuración de Supabase (generado en build) -->
     <script src="/js/config.js"></script>
     
+    <!-- Configuración de modo de acceso -->
+    <script src="/js/access-config.js"></script>
+
+    <!-- Cliente Supabase (necesario para el Access Gate) -->
     <script src="/js/supabase-client.js"></script>
+
+    <!-- Control de acceso (debe cargarse temprano para bloquear la UI si es necesario) -->
+    <script src="/js/access-gate.js"></script>
+
+    <!-- Resto de módulos de autenticación y propuestas -->
     <script src="/js/auth.js"></script>
     <script src="/js/proposals.js"></script>
     <script src="/js/simplified-view.js"></script>
