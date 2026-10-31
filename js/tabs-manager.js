@@ -170,6 +170,24 @@ function initializeTabs() {
     const title = document.getElementById('app-title');
     if (title) {
         title.addEventListener('click', function() {
+            // En modo simplificado, el título lleva a la web completa.
+            // (Antes se comparaba con `typeof isSimplifiedMode === 'function'`,
+            //  pero `window.isSimplifiedMode` es un booleano, no una función,
+            //  así que la condición nunca se cumplía.)
+            if (window.isSimplifiedMode === true) {
+                // Autenticados: navegar limpio; auth.js cargará su propia propuesta.
+                // No autenticados: preservar la propuesta que estaban viendo
+                // para que la web completa arranque con esos datos.
+                const user = typeof window.currentUser === 'function'
+                    ? window.currentUser()
+                    : null;
+                if (!user && typeof window.goToFullWeb === 'function') {
+                    window.goToFullWeb();
+                    return;
+                }
+                window.location.href = window.location.origin + '/';
+                return;
+            }
             history.pushState({}, '', '/');
             activateTab('propuestas');
             window.scrollTo({ top: 0, behavior: 'smooth' });

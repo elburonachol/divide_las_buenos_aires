@@ -1,0 +1,201 @@
+/* =============================================
+   MODO SIMPLIFICADO (VISTA DE PROPUESTA AJENA)
+   ============================================= */
+
+/* Ocultar elementos que no pertenecen a la vista simplificada */
+body.simplified-mode .hide-in-simplified {
+    display: none !important;
+}
+
+/* Header: alternar entre dropdown y botón de web completa */
+body.simplified-mode #proposal-dropdown {
+    display: none !important;
+}
+body:not(.simplified-mode) #go-full-web-wrapper {
+    display: none !important;
+}
+body.simplified-mode #go-full-web-wrapper {
+    display: block;
+}
+
+/* Botón "Ir a la web completa" */
+.go-full-web-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.go-full-web-btn {
+    background: #1a3a5c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.go-full-web-btn:hover {
+    background: #12304d;
+    transform: translateY(-1px);
+}
+
+.go-full-web-btn:focus-visible {
+    outline: 2px solid #3388ff;
+    outline-offset: 2px;
+}
+
+/* Tooltip */
+.go-full-web-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #4a4a4a;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    width: 300px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    z-index: 1001;
+    text-align: left;
+}
+
+.go-full-web-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: #4a4a4a;
+    transform: rotate(45deg);
+}
+
+.go-full-web-tooltip p {
+    margin: 0 0 6px 0;
+    font-weight: 600;
+}
+
+.go-full-web-tooltip ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.go-full-web-tooltip li {
+    margin-bottom: 4px;
+}
+
+.go-full-web-tooltip li:last-child {
+    margin-bottom: 0;
+}
+
+.go-full-web-wrapper:hover .go-full-web-tooltip {
+    display: block;
+}
+
+/* Modal "¿Qué datos querés ver?" */
+.data-choice-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 11000;
+    font-family: Arial, sans-serif;
+}
+
+.data-choice-modal {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    position: relative;
+    text-align: center;
+}
+
+.data-choice-modal h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.data-choice-modal p {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 22px;
+}
+
+.data-choice-modal .data-choice-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.data-choice-modal button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.data-choice-modal .primary {
+    background: #27ae60;
+    color: white;
+}
+
+.data-choice-modal .primary:hover {
+    background: #219a52;
+}
+
+.data-choice-modal .secondary {
+    background: #e9ecef;
+    color: #333;
+}
+
+.data-choice-modal .secondary:hover {
+    background: #d6dbe0;
+}
+
+.data-choice-modal .close-x {
+    position: absolute;
+    top: 10px; right: 15px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #999;
+    padding: 4px;
+}
+
+.data-choice-modal .close-x:hover {
+    color: #333;
+}
+
+/* =============================================
+   REPARTO HORIZONTAL EN VISTA SIMPLIFICADA
+   En modo simplificado, el listado de departamentos está
+   oculto. Mapa y cajas de división se reparten el ancho
+   disponible en partes iguales (50% / 50%).
+   En la web completa no se aplica esta regla.
+   ============================================= */
+
+body.simplified-mode #map-container {
+    flex: 1;
+}
+
+body.simplified-mode .divisions-column {
+    flex: 1;
+}

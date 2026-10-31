@@ -65,37 +65,43 @@ function initializeDivisionBoxes(newCount) {
 
         container.appendChild(groupBox);
         
-        // Configurar nombres editables con eventos
+        // Obtener referencia al nombre editable antes de usarla
         const editableName = groupBox.querySelector('.editable-division-name');
-        editableName.addEventListener('blur', function() {
-            departmentGroups[i].name = this.textContent;
-            updateComparisonTable();
-            // Salir del modo región existente si se edita el nombre
-            if (currentRegionType) {
-                document.getElementById('existing-regions').value = '';
-                currentRegionType = null;
-            }
-        });
         
-        // Permitir Enter para guardar sin salir del campo
-        editableName.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.blur();
-            }
-        });
+        // En modo simplificado, los nombres de las divisiones NO son editables
+        if (window.isSimplifiedMode) {
+            editableName.setAttribute('contenteditable', 'false');
+            editableName.style.cursor = 'default';
+        } else {
+            editableName.addEventListener('blur', function() {
+                departmentGroups[i].name = this.textContent;
+                updateComparisonTable();
+                if (currentRegionType) {
+                    document.getElementById('existing-regions').value = '';
+                    currentRegionType = null;
+                }
+            });
+            editableName.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+        }
         
-        // Restaurar departamentos si esta división existía antes
+        // Restaurar departamentos (PBA o comunas de CABA) si esta división existía antes
         if (previousGroups[i] && previousGroups[i].departments) {
             const divisionList = document.getElementById(`division-${i}`);
             previousGroups[i].departments.forEach(deptName => {
-                const dept = allDepartments.find(d => d.properties.nam === deptName);
-                const isGBA = dept && gbaCodes.includes(dept.properties.cde);
+                const element = findDepartmentOrComuna(deptName);
+                const isComuna = element && comunasCABA.includes(element);
+                const isGBA = element && !isComuna && gbaCodes.includes(element.properties.cde);
                 
                 const item = document.createElement('div');
                 item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
                 item.textContent = deptName;
                 item.setAttribute('data-dept-name', deptName);
+                if (element) item.setAttribute('data-dept-code', element.properties.cde);
                 divisionList.appendChild(item);
             });
             // Ordenar alfabéticamente los departamentos en la división
@@ -179,16 +185,17 @@ function sortMainList() {
 function returnDepartmentToMainList(departmentName) {
     const listContainer = document.getElementById('all-departments-list');
     
-    // Recuperar datos completos del departamento
-    const dept = allDepartments.find(d => d.properties.nam === departmentName);
-    const isGBA = dept && gbaCodes.includes(dept.properties.cde);
+    // Recuperar datos completos del departamento o comuna
+    const element = findDepartmentOrComuna(departmentName);
+    const isComuna = element && comunasCABA.includes(element);
+    const isGBA = element && !isComuna && gbaCodes.includes(element.properties.cde);
     
     // Crear elemento para el listado
     const item = document.createElement('div');
     item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
     item.textContent = departmentName;
     item.setAttribute('data-dept-name', departmentName);
-    item.setAttribute('data-dept-code', dept ? dept.properties.cde : '');
+    item.setAttribute('data-dept-code', element ? element.properties.cde : '');
     
     listContainer.appendChild(item);
     sortMainList();
@@ -269,6 +276,12 @@ function initializeDragAndDrop() {
     const divisionLists = Array.from({length: currentDivisionCount}, (_, i) => 
         document.getElementById(`division-${i + 1}`)
     );
+
+    // En modo simplificado no se permite arrastrar departamentos
+    if (window.isSimplifiedMode) {
+        console.log('🔒 Drag & drop deshabilitado en modo simplificado');
+        return;
+    }
 
     // Configurar lista principal de departamentos
     Sortable.create(allDepartmentsList, {

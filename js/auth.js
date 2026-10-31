@@ -36,7 +36,14 @@ let currentEmail = '';
  */
 async function sendMagicLink(email, redirectPath = '') {
     try {
-        const baseUrl = window.location.origin + window.location.pathname;
+        // En modo simplificado, el magic link debe llevar SIEMPRE a la web
+        // completa (a "/"), nunca a "/propuesta/<code>". Así el usuario, al
+        // autenticarse, aterriza en la web completa y puede volver atrás con
+        // el botón del navegador a la versión simplificada original.
+        const inSimplified = window.isSimplifiedMode === true;
+        const baseUrl = inSimplified
+            ? window.location.origin + '/'
+            : window.location.origin + window.location.pathname;
         const redirectUrl = redirectPath 
             ? `${baseUrl}?redirect=${encodeURIComponent(redirectPath)}`
             : baseUrl;
@@ -113,7 +120,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
         // Cargar la propuesta del usuario
         currentProposal = await loadUserProposal();
         if (currentProposal) {
-            applyProposalToUI(currentProposal);
+            applyProposalToUI(currentProposal, { isPublic: false });
         }
         
         updateAuthUI();
@@ -142,118 +149,174 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 /**
  * APLICA UNA PROPUESTA GUARDADA A LA INTERFAZ DE USUARIO
- * Toma los datos de la propuesta y actualiza el estado global y la UI.
- * @param {Object} proposal - Objeto de la propuesta desde Supabase.
+ * @param {Object} proposal - Objeto de la propuesta desde Supabase
+ * @param {Object} options - Opciones: {isPublic: bool, isFork: bool}
  */
-function applyProposalToUI(proposal) {
+function applyProposalToUI(proposal, options = {}) {
     if (!proposal) return;
 
-    // Si los datos base aún no están cargados, encolar la propuesta
     if (!allDepartments || allDepartments.length === 0) {
         console.log('⏳ Datos aún no cargados. Encolando propuesta para aplicar después.');
         window.__pendingProposal = proposal;
+        window.__pendingProposalOptions = options;
         return;
     }
 
-    console.log('📋 Aplicando propuesta:', proposal.titulo);
+    // Marcar que estamos aplicando una propuesta, para que notifyStateChange
+    // no dispare el popup de fork durante la carga inicial.
+    window.isApplyingProposal = true;
 
-    // 1. Actualizar el título de la propuesta en la UI
-    const userInfo = document.getElementById('user-info');
-    if (userInfo) {
-        const titleSpan = userInfo.querySelector('.user-proposal-title');
-        if (titleSpan) titleSpan.textContent = proposal.titulo;
-    }
+    try {
+        console.log('📋 Aplicando propuesta:', proposal.titulo);
 
-    // 2. Actualizar el estado global
-    currentDivisionCount = proposal.cantidad_divisiones || 3;
-    comunasIncluidas = proposal.incluye_comunas_caba || false;
-    
-    // 3. Reconstruir las cajas de división
-    initializeDivisionBoxes(currentDivisionCount);
+        // 1. Actualizar metadatos visibles
+        updateProposalMeta(proposal, options);
 
-    // 4. Asignar nombres a cada división
-    if (proposal.nombres_divisiones && Array.isArray(proposal.nombres_divisiones)) {
-        proposal.nombres_divisiones.forEach((nombre, index) => {
-            const groupId = index + 1;
-            if (departmentGroups[groupId]) {
-                departmentGroups[groupId].name = nombre;
-                const editableName = document.querySelector(`[data-group-id="${groupId}"] .editable-division-name`);
-                if (editableName) editableName.textContent = nombre;
+        // 2. Actualizar el estado global
+        currentDivisionCount = proposal.cantidad_divisiones || 3;
+        comunasIncluidas = proposal.incluye_comunas_caba || false;
+
+        // 3. Sincronizar el checkbox de comunas y, si corresponde,
+        //    mostrar las comunas ANTES de reconstruir las divisiones
+        //    (así están disponibles en el listado y en el mapa).
+        const comunasCheckbox = document.getElementById('toggle-comunas');
+        if (comunasCheckbox) comunasCheckbox.checked = comunasIncluidas;
+
+        if (comunasIncluidas) {
+            if (typeof showComunas === 'function') {
+                showComunas();
             }
-        });
-    }
+        } else {
+            if (typeof hideComunas === 'function' && comunasVisible) {
+                hideComunas();
+            }
+        }
 
-    // 5. Asignar departamentos a sus divisiones
-    if (proposal.departamentos_por_division) {
-        Object.keys(proposal.departamentos_por_division).forEach(groupId => {
-            const deptNames = proposal.departamentos_por_division[groupId];
-            if (departmentGroups[groupId] && Array.isArray(deptNames)) {
-                const divisionList = document.getElementById(`division-${groupId}`);
-                if (divisionList) {
-                    divisionList.innerHTML = '';
-                    deptNames.forEach(deptName => {
-                        const dept = allDepartments.find(d => d.properties.nam === deptName);
-                        if (dept) {
-                            const isGBA = gbaCodes.includes(dept.properties.cde);
-                            const item = document.createElement('div');
-                            item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
-                            item.textContent = deptName;
-                            item.setAttribute('data-dept-name', deptName);
-                            item.setAttribute('data-dept-code', dept.properties.cde);
-                            divisionList.appendChild(item);
-                        }
-                    });
-                    sortDivisionList(groupId);
+        // 4. Reconstruir las cajas de división
+        initializeDivisionBoxes(currentDivisionCount);
+
+        // 5. Asignar nombres a cada división
+        if (proposal.nombres_divisiones && Array.isArray(proposal.nombres_divisiones)) {
+            proposal.nombres_divisiones.forEach((nombre, index) => {
+                const groupId = index + 1;
+                if (departmentGroups[groupId]) {
+                    departmentGroups[groupId].name = nombre;
+                    const editableName = document.querySelector(`[data-group-id="${groupId}"] .editable-division-name`);
+                    if (editableName) editableName.textContent = nombre;
                 }
+            });
+        }
+
+        // 6. Asignar departamentos Y comunas a sus divisiones
+        if (proposal.departamentos_por_division) {
+            Object.keys(proposal.departamentos_por_division).forEach(groupId => {
+                const deptNames = proposal.departamentos_por_division[groupId];
+                if (departmentGroups[groupId] && Array.isArray(deptNames)) {
+                    const divisionList = document.getElementById(`division-${groupId}`);
+                    if (divisionList) {
+                        divisionList.innerHTML = '';
+                        deptNames.forEach(deptName => {
+                            const element = findDepartmentOrComuna(deptName);
+                            if (element) {
+                                const isComuna = comunasCABA.includes(element);
+                                const isGBA = !isComuna && gbaCodes.includes(element.properties.cde);
+                                const item = document.createElement('div');
+                                item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
+                                item.textContent = deptName;
+                                item.setAttribute('data-dept-name', deptName);
+                                item.setAttribute('data-dept-code', element.properties.cde);
+                                divisionList.appendChild(item);
+                            }
+                        });
+                        sortDivisionList(groupId);
+                    }
+                }
+            });
+        }
+
+        // 7. Reconstruir el listado principal con los elementos NO asignados
+        //    (incluyendo comunas si están incluidas).
+        const listContainer = document.getElementById('all-departments-list');
+        if (listContainer) {
+            listContainer.innerHTML = '';
+            const assignedDepts = new Set();
+            Object.values(proposal.departamentos_por_division || {}).forEach(depts => {
+                depts.forEach(name => assignedDepts.add(name));
+            });
+
+            const todosLosElementos = [...allDepartments];
+            if (comunasIncluidas && typeof comunasCABA !== 'undefined') {
+                todosLosElementos.push(...comunasCABA);
             }
-        });
+
+            todosLosElementos.forEach(feature => {
+                const name = feature.properties.nam;
+                if (!assignedDepts.has(name)) {
+                    const isComuna = comunasCABA.includes(feature);
+                    const isGBA = !isComuna && gbaCodes.includes(feature.properties.cde);
+                    const item = document.createElement('div');
+                    item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
+                    item.textContent = name;
+                    item.setAttribute('data-dept-name', name);
+                    item.setAttribute('data-dept-code', feature.properties.cde);
+                    listContainer.appendChild(item);
+                }
+            });
+            sortMainList();
+        }
+
+        // 8. Sincronizar controles
+        const divisionInput = document.getElementById('division-count');
+        if (divisionInput) divisionInput.value = currentDivisionCount;
+
+        // 9. Notificar
+        notifyStateChange();
+        updateDivisionsTitle();
+
+        console.log('✅ Propuesta aplicada a la interfaz.');
+    } finally {
+        window.isApplyingProposal = false;
     }
+}
 
-    // 6. Reconstruir el listado principal
-    const listContainer = document.getElementById('all-departments-list');
-    if (listContainer) {
-        listContainer.innerHTML = '';
-        const assignedDepts = new Set();
-        Object.values(proposal.departamentos_por_division || {}).forEach(depts => {
-            depts.forEach(name => assignedDepts.add(name));
-        });
-
-        allDepartments.forEach(feature => {
-            const name = feature.properties.nam;
-            if (!assignedDepts.has(name)) {
-                const isGBA = gbaCodes.includes(feature.properties.cde);
-                const item = document.createElement('div');
-                item.className = `department-item ${isGBA ? 'gba-department-bold' : ''}`;
-                item.textContent = name;
-                item.setAttribute('data-dept-name', name);
-                item.setAttribute('data-dept-code', feature.properties.cde);
-                listContainer.appendChild(item);
-            }
-        });
-        sortMainList();
+/**
+ * ACTUALIZA LOS METADATOS VISIBLES DE LA PROPUESTA
+ * (título y autoría) según si es propia, pública o forkeada.
+ */
+function updateProposalMeta(proposal, options) {
+    const meta = document.getElementById('proposal-meta');
+    const titleEl = document.getElementById('proposal-meta-title');
+    const authorEl = document.getElementById('proposal-meta-author');
+    const authorNameEl = document.getElementById('proposal-meta-author-name');
+    
+    if (!meta) return;
+    
+    if (options.isPublic) {
+        // Propuesta pública ajena: mostrar título + autor si corresponde
+        meta.style.display = 'block';
+        titleEl.textContent = proposal.titulo || '';
+        if (proposal.mostrar_nombre_publicamente && proposal.nombre_autor) {
+            authorEl.style.display = 'block';
+            authorNameEl.textContent = proposal.nombre_autor;
+        } else {
+            authorEl.style.display = 'none';
+        }
+    } else {
+        // Propuesta propia: no mostramos meta (el título va en el dropdown)
+        meta.style.display = 'none';
     }
-
-    // 7. Sincronizar controles
-    const divisionInput = document.getElementById('division-count');
-    if (divisionInput) divisionInput.value = currentDivisionCount;
-
-    const comunasCheckbox = document.getElementById('toggle-comunas');
-    if (comunasCheckbox) comunasCheckbox.checked = comunasIncluidas;
-    
-    // 8. Notificar a todos los módulos
-    notifyStateChange();
-    updateDivisionsTitle();
-    
-    console.log('✅ Propuesta aplicada a la interfaz.');
 }
 
 /**
  * ACTUALIZA LA INTERFAZ SEGÚN EL ESTADO DE AUTENTICACIÓN
- * Delega el renderizado al dropdown de la esquina superior derecha.
  */
 function updateAuthUI() {
     if (typeof renderDropdownContent === 'function') {
         renderDropdownContent(currentUser, currentProposal);
+    }
+    // Re-renderizar el formulario de contacto según el estado de auth
+    if (typeof window.renderContactForm === 'function') {
+        window.renderContactForm();
     }
 }
 
@@ -675,6 +738,8 @@ window.updateAuthUI = updateAuthUI;
 window.currentUser = () => currentUser;
 window.currentProposal = () => currentProposal;
 window.setCurrentProposal = (p) => { currentProposal = p; };
+window.getMagicLinkSentHTML = getMagicLinkSentHTML;
+window.wrapAuthModalContent = wrapAuthModalContent;
 
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof updateAuthUI === 'function') {
