@@ -1,3 +1,10 @@
+/*
+ * ESTILOS DE DRAG & DROP Y LISTAS
+ *
+ * NOTA DE ESTILO: no deben usarse emojis en ninguna parte visible para el
+ * usuario. Sólo se aceptan en los logs de consola (Herramientas de desarrollador).
+ */
+
 /* =============================================
    ESTILOS DE DRAG & DROP Y LISTAS
    ============================================= */
@@ -65,111 +72,12 @@
     transition: all 0.3s ease;
 }
 
-/* Efectos de compresión y expansión para drag-and-drop */
-.group-box.compressed .group-list {
-    max-height: 50px;
-    min-height: 50px;
-    overflow: hidden;
-}
-
-.group-box.expanded .group-list {
-    max-height: 400px;
-    min-height: 150px;
-}
-
-/* Para el listado de departamentos */
-.list-column.compressed .departments-list {
-    max-height: 50px;
-    min-height: 50px;
-    overflow: hidden;
-}
-
-.list-column.expanded .departments-list {
-    max-height: 400px;
-    min-height: 150px;
-}
-
-/* Listas de departamentos */
-.count-info {
-    font-size: 0.85rem;
-    color: #6c757d;
-    font-weight: normal;
-    margin-left: 8px;
-}
-/* =============================================
-   ESTILOS DE DRAG & DROP Y LISTAS
-
-   NOTA: no deben usarse emojis en ninguna parte visible para el usuario.
-   Sólo se aceptan emojis en los logs de la página (consola del navegador,
-   accesible desde "Herramientas de desarrollador").
-   ============================================= */
-
-/* Grupos de división */
-.groups-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.group-box {
-    background: #f8f9fa; /* Reemplazar por un tono más claro basado en el color de la división */
-    border-radius: 6px;
-    padding: 12px 15px;
-    margin-bottom: 10px;
-    border-left: 8px solid #ccc; /* Borde lateral izquierdo más ancho (era 4px) */
-    /* Se quitó la transición de box-shadow: el hover ya no produce
-       la "expansión leve" percibida (efecto de sombra). Sólo mantenemos
-       la transición de background por si se cambia dinámicamente. */
-    transition: background 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    cursor: pointer;
-}
-
-/* Indicador visual de que el nombre es editable */
-.group-box .editable-division-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #333;
-    margin: 0 0 6px 0;
-    padding: 4px 6px;
-    border-radius: 4px;
-    transition: background 0.2s ease;
-    cursor: text;
-}
-
-.group-box .editable-division-name:hover {
-    background: rgba(0,0,0,0.04);
-}
-
-.group-box .editable-division-name:focus {
-    background: white;
-    outline: 2px solid #3498db;
-    outline-offset: 1px;
-}
-
-.group-list {
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.6);
-    transition: all 0.3s ease;
-    /* Sin borde punteado, sin altura mínima forzada */
-}
-
-/* Efectos de compresión y expansión para drag-and-drop.
-   IMPORTANTE: como el estado por defecto de .group-list ya es
-   max-height: 0 / min-height: 0, la clase .compressed debe
-   MANTENER ese estado (no agrandarlo). Antes tenía 50px, lo cual
-   hacía que, al iniciar un drag (onChoose -> compressAllLists),
-   las cajas no arrastradas crecieran ~50px y desplazaran el layout,
-   rompiendo el click sobre el departamento apuntado. */
-.group-box.compressed .group-list {
-    max-height: 0;
-    min-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    margin-top: 0;
-    padding: 0 10px;
-}
-
+/* Efectos de expansión para drag-and-drop
+   IMPORTANTE: no agregar aquí una regla para `.group-box.compressed .group-list`
+   que expanda el contenedor. El estado base ya está colapsado (max-height: 0)
+   y la expansión debe venir SÓLO por :hover o por la clase .expanded.
+   Cualquier otra regla provoca la "expansión fantasma" al hacer mousedown
+   sobre un departamento (SortableJS dispara onChoose → compressAllLists). */
 .group-box.expanded .group-list {
     max-height: 400px;
     min-height: 150px;
@@ -306,8 +214,7 @@
     padding: 0 10px;
 }
 
-/* Al pasar el cursor: se expande después de un breve retardo.
-   (Antes eran 0,6 s; ahora 0,4 s para que se sienta más ágil.) */
+/* Al pasar el cursor: se expande después de un delay razonable (0.4s) */
 .group-box:hover .group-list {
     max-height: 150px;
     overflow-y: auto;
@@ -317,7 +224,8 @@
     padding: 8px 10px;
 }
 
-/* Durante drag & drop: se expande inmediatamente */
+/* Durante drag & drop: se expande inmediatamente.
+   Sólo la caja activa debería tener esta clase (ver divisions-manager.js). */
 .group-box.expanded .group-list {
     max-height: 150px;
     overflow-y: auto;
