@@ -73,15 +73,12 @@
 }
 
 /* Efectos de expansión para drag-and-drop
-   IMPORTANTE: no agregar aquí una regla para `.group-box.compressed .group-list`
-   que expanda el contenedor. El estado base ya está colapsado (max-height: 0)
-   y la expansión debe venir SÓLO por :hover o por la clase .expanded.
-   Cualquier otra regla provoca la "expansión fantasma" al hacer mousedown
-   sobre un departamento (SortableJS dispara onChoose → compressAllLists). */
-.group-box.expanded .group-list {
-    max-height: 400px;
-    min-height: 150px;
-}
+   IMPORTANTE: la expansión de las cajas de división durante el drag se
+   resuelve exclusivamente con :hover + la clase .dragging-active en el body
+   (ver más abajo). NO agregar aquí reglas para `.group-box.expanded` ni
+   para `.group-box.compressed`: producían la "expansión fantasma" de 50px
+   al hacer mousedown sobre un departamento (SortableJS dispara onChoose →
+   compressAllLists → .compressed expandía la lista interna de cada caja). */
 
 /* Para el listado de departamentos */
 .list-column.compressed .departments-list {
@@ -148,13 +145,18 @@
     order: -1;
 }
 
-/* Elemento arrastrado */
+/* Elemento arrastrado (clon que sigue al cursor).
+   pointer-events: none permite que el cursor "atraviese" el clon y active
+   :hover en la caja de división que está debajo. Sin esto, el :hover se
+   aplicaría al clon y no a la caja destino, por lo que la expansión por
+   :hover durante el drag no funcionaría. */
 .dragging-item {
     opacity: 0.5;
     transform: rotate(5deg);
+    pointer-events: none;
 }
 
-/* Estado de arrastre para SortableJS */
+/* Estado de arrastre para SortableJS (placeholder que queda en el origen) */
 .dragging {
     opacity: 0.5;
     transform: rotate(5deg);
@@ -184,7 +186,8 @@
    CAJAS DE DIVISIÓN CONTRAÍBLES
    - Estado retraído: sólo nombre visible, altura ~2x título
    - Hover con delay: se expande mostrando título + 3 depts con scroll
-   - Drag & drop: se expande inmediatamente (clase .expanded)
+   - Drag & drop: se expande inmediatamente (sin delay) gracias a
+     body.dragging-active
    ============================================= */
 
 /* Altura base de la caja en estado colapsado: ~2x altura del título */
@@ -214,7 +217,8 @@
     padding: 0 10px;
 }
 
-/* Al pasar el cursor: se expande después de un delay razonable (0.4s) */
+/* Al pasar el cursor: se expande después de un delay razonable (0.4s).
+   Es la expansión "lenta" del hover normal, sin arrastre. */
 .group-box:hover .group-list {
     max-height: 150px;
     overflow-y: auto;
@@ -224,9 +228,13 @@
     padding: 8px 10px;
 }
 
-/* Durante drag & drop: se expande inmediatamente.
-   Sólo la caja activa debería tener esta clase (ver divisions-manager.js). */
-.group-box.expanded .group-list {
+/* Durante drag & drop: la caja bajo el cursor se expande INMEDIATAMENTE
+   (transition-delay: 0s). La clase .dragging-active se agrega al body
+   desde divisions-manager.js (onChoose) y se quita al soltar
+   (onUnchoose / onEnd). Combinado con pointer-events: none en
+   .dragging-item, esto permite que el cursor active :hover en la caja
+   destino y que haya área real para soltar. */
+body.dragging-active .group-box:hover .group-list {
     max-height: 150px;
     overflow-y: auto;
     transition-delay: 0s;
