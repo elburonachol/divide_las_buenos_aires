@@ -268,21 +268,17 @@ function updateDepartmentGroups() {
 }
 
 // =============================================
-// SISTEMA DE DRAG & DROP CON SORTABLEJS
+// SISTEMA DE DRAG & DROP CON REDIMENSIONAMIENTO DINÁMICO
 // =============================================
 
 /**
  * INICIALIZA EL SISTEMA DE DRAG & DROP CON SORTABLEJS
+ * Configura todas las listas (principal y divisiones) para arrastrar elementos
+ * con redimensionamiento dinámico.
  *
- * Estrategia de expansión visual durante el arrastre:
- * - La caja de división bajo el cursor se expande por :hover natural del CSS
- *   (ver drag-drop.css → "body.dragging-active .group-box:hover .group-list").
- * - Para que :hover se active sobre la caja destino y no sobre el clon que
- *   sigue al cursor, el clon (.dragging-item) tiene pointer-events: none.
- * - La clase .dragging-active en el body reduce el delay de transición a 0s
- *   mientras dura el arrastre, logrando expansión inmediata.
- * - forzamos forceFallback: true para que SortableJS no use el drag nativo
- *   HTML5 (que no respeta bien pointer-events ni :hover durante el arrastre).
+ * El grupo de las Sortables es 'departamentos' en TODOS los contenedores
+ * (listado principal y cajas de división) para que SortableJS pueda mover
+ * elementos entre cualquiera de ellos sin restricciones de nombre.
  */
 function initializeDragAndDrop() {
     const allDepartmentsList = document.getElementById('all-departments-list');
@@ -296,41 +292,20 @@ function initializeDragAndDrop() {
         return;
     }
 
-    // Opciones compartidas por todas las listas Sortable.
-    // El group.name DEBE ser idéntico en todas para permitir mover elementos
-    // entre el listado principal y las divisiones (y entre divisiones).
-    const commonSortableOptions = {
+    // Configurar lista principal de departamentos
+    Sortable.create(allDepartmentsList, {
         group: {
-            name: 'departamentos',
+            name: 'departamentos', // Mismo nombre que las divisiones: permite intercambio libre
             pull: true,
             put: true
         },
+        sort: true,
         animation: 150,
         ghostClass: 'dragging',
         dragClass: 'dragging-item',
-        // Usar el fallback de mouse en lugar del drag nativo HTML5:
-        // nos permite controlar pointer-events del clon y habilitar :hover
-        // sobre la caja de división que está debajo del cursor.
-        forceFallback: true,
-        fallbackOnBody: true,
-        fallbackTolerance: 3,
-        onChoose: function(evt) {
-            // Activar modo drag: el CSS expande sin delay la caja bajo :hover.
-            document.body.classList.add('dragging-active');
-            // Comprimir el listado principal para dar más espacio visual.
-            compressMainListDuringDrag();
-        },
-        onUnchoose: function(evt) {
-            // Restaurar el estado visual al salir del drag.
-            document.body.classList.remove('dragging-active');
-            restoreMainListAfterDrag();
-        }
-    };
-
-    // Configurar lista principal de departamentos
-    Sortable.create(allDepartmentsList, {
-        ...commonSortableOptions,
-        sort: true, // Permitir reordenamiento interno
+        onChoose: handleDragChoose,
+        onMove: handleDragMove,
+        onUnchoose: handleDragUnchoose,
         onAdd: function(evt) {
             // Reordenar automáticamente después de agregar elemento
             setTimeout(() => {
@@ -338,49 +313,160 @@ function initializeDragAndDrop() {
             }, 100);
         },
         onEnd: function(evt) {
-            document.body.classList.remove('dragging-active');
-            restoreMainListAfterDrag();
-            handleDepartmentMove(evt);
+            handleDragEnd(evt, sortMainList);
         }
     });
 
     // Configurar cada lista de división
     divisionLists.forEach((divisionList, index) => {
-        if (!divisionList) return;
-        Sortable.create(divisionList, {
-            ...commonSortableOptions,
-            onEnd: function(evt) {
-                document.body.classList.remove('dragging-active');
-                restoreMainListAfterDrag();
-                handleDepartmentMove(evt);
-                sortDivisionList(index + 1);
-            }
-        });
+        if (divisionList) {
+            Sortable.create(divisionList, {
+                group: {
+                    name: 'departamentos', // Unificado con el listado principal
+                    pull: true,
+                    put: true
+                },
+                animation: 150,
+                ghostClass: 'dragging',
+                dragClass: 'dragging-item',
+                onChoose: handleDragChoose,
+                onMove: handleDragMove,
+                onUnchoose: handleDragUnchoose,
+                onEnd: function(evt) {
+                    handleDragEnd(evt, () => sortDivisionList(index + 1));
+                }
+            });
+        }
     });
 }
 
 /**
- * COMPRIME EL LISTADO PRINCIPAL DURANTE EL ARRASTRE
- * Reduce la altura visible del listado para dar más espacio al mapa y a las
- * divisiones mientras el usuario arrastra departamentos.
- * (Sólo actúa sobre el listado principal: las cajas de división se manejan
- * por :hover, ver drag-drop.css.)
+ * HANDLER: INICIO DEL DRAG (onChoose)
+ * - Marca el body con la clase .is-dragging para activar los estilos
+ *   de drag (hit areas invisibles en cada caja de división).
+ * - Si el drag se origina en una caja de división, marca esa caja como
+ *   objetivo inicial (la que estaba bajo el cursor al iniciar el drag).
+ * @param {Object} evt - Evento de SortableJS
  */
-function compressMainListDuringDrag() {
-    const listColumn = document.querySelector('.list-column');
-    if (listColumn) {
-        listColumn.classList.add('compressed');
+function handleDragChoose(evt) {
+    document.body.classList.add('is-dragging');
+    
+    // Marcar como objetivo la caja de origen (si aplica)
+    const fromGroupBox = evt.from.closest('.group-box');
+    if (fromGroupBox) {
+        fromGroupBox.classList.add('is-drag-target');
     }
 }
 
 /**
- * RESTAURA EL LISTADO PRINCIPAL TRAS FINALIZAR EL ARRASTRE
- * Revierte la compresión aplicada por compressMainListDuringDrag().
+ * HANDLER: MOVIMIENTO DURANTE EL DRAG (onMove)
+ * Detecta por puntero qué caja de división está bajo el cursor y le
+ * aplica .is-drag-target (quitándosela a las demás). Si el puntero no
+ * está sobre ninguna caja de división, deja todas colapsadas.
+ * @param {Object} evt - Evento de SortableJS
  */
-function restoreMainListAfterDrag() {
-    const listColumn = document.querySelector('.list-column');
-    if (listColumn) {
-        listColumn.classList.remove('compressed', 'expanded');
+function handleDragMove(evt) {
+    updateDragTargetFromPointer(evt);
+}
+
+/**
+ * HANDLER: FIN DEL DRAG SIN DROP (onUnchoose)
+ * Limpia las clases de drag y deja todas las cajas colapsadas.
+ * @param {Object} evt - Evento de SortableJS
+ */
+function handleDragUnchoose(evt) {
+    document.body.classList.remove('is-dragging');
+    collapseAllGroupBoxes();
+}
+
+/**
+ * HANDLER: FIN DEL DRAG CON DROP (onEnd)
+ * Limpia las clases de drag, procesa el movimiento y reordena la lista
+ * afectada (listado principal o división).
+ * @param {Object} evt - Evento de SortableJS
+ * @param {Function} [sortAfter] - Callback para reordenar tras el movimiento
+ */
+function handleDragEnd(evt, sortAfter) {
+    document.body.classList.remove('is-dragging');
+    collapseAllGroupBoxes();
+    handleDepartmentMove(evt);
+    if (typeof sortAfter === 'function') {
+        sortAfter();
+    }
+}
+
+/**
+ * ACTUALIZA LA CAJA DE DIVISIÓN OBJETIVO DEL DRAG SEGÚN EL PUNTERO
+ * Usa las coordenadas del evento original (clientX/clientY) para
+ * encontrar cuál .group-box está bajo el cursor, y le aplica la clase
+ * .is-drag-target. Si no hay ninguna bajo el cursor, quita la clase de
+ * todas.
+ * @param {Object} evt - Evento de SortableJS (con evt.originalEvent)
+ */
+function updateDragTargetFromPointer(evt) {
+    const originalEvent = evt.originalEvent;
+    if (!originalEvent) return;
+    
+    const clientX = originalEvent.clientX;
+    const clientY = originalEvent.clientY;
+    
+    // Buscar la caja de división bajo el puntero
+    const allBoxes = document.querySelectorAll('.group-box');
+    let targetBox = null;
+    
+    allBoxes.forEach(box => {
+        const rect = box.getBoundingClientRect();
+        if (clientX >= rect.left && clientX <= rect.right &&
+            clientY >= rect.top && clientY <= rect.bottom) {
+            targetBox = box;
+        }
+    });
+    
+    // Actualizar clases: sólo la caja bajo el cursor queda como objetivo
+    allBoxes.forEach(box => {
+        if (box === targetBox) {
+            box.classList.add('is-drag-target');
+        } else {
+            box.classList.remove('is-drag-target');
+        }
+    });
+}
+
+/**
+ * COLAPSA TODAS LAS CAJAS DE DIVISIÓN
+ * Remueve la clase .is-drag-target de todas las .group-box.
+ * Se llama al terminar el drag o al pasar el puntero fuera de cualquier caja.
+ */
+function collapseAllGroupBoxes() {
+    document.querySelectorAll('.group-box').forEach(box => {
+        box.classList.remove('is-drag-target');
+    });
+}
+
+/**
+ * RESTAURA TODAS LAS LISTAS A SU ESTADO NORMAL
+ * Limpia clases de drag y expansión. Se conserva como utilidad por si
+ * algún flujo externo la invoca (aunque los nuevos handlers ya hacen
+ * la limpieza vía handleDragUnchoose / handleDragEnd).
+ */
+function restoreAllLists() {
+    document.body.classList.remove('is-dragging');
+    collapseAllGroupBoxes();
+    
+    // Compatibilidad: remover .compressed/.expanded por si quedaron residuales
+    for (let i = 1; i <= currentDivisionCount; i++) {
+        const divisionList = document.getElementById(`division-${i}`);
+        if (divisionList) {
+            const groupBox = divisionList.closest('.group-box');
+            if (groupBox) {
+                groupBox.classList.remove('expanded', 'compressed');
+            }
+        }
+    }
+    
+    const allDepartmentsList = document.getElementById('all-departments-list');
+    if (allDepartmentsList && allDepartmentsList.parentElement) {
+        allDepartmentsList.parentElement.classList.remove('compressed', 'expanded');
     }
 }
 
