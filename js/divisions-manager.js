@@ -8,6 +8,11 @@
  * - Actualización de grupos de departamentos
  */
 
+/*
+ * NOTA DE ESTILO: no deben usarse emojis en ninguna parte visible para el
+ * usuario. Sólo se aceptan en los logs de consola (Herramientas de desarrollador).
+ */
+
 // =============================================
 // SISTEMA DE DIVISIONES
 // =============================================
@@ -362,22 +367,38 @@ function initializeDragAndDrop() {
 }
 
 /**
- * COMPRIME TODAS LAS LISTAS (divisiones y listado principal)
- * Se llama cuando comienza el arrastre de un elemento
+ * COLAPSA TODAS LAS CAJAS DE DIVISIÓN Y COMPRIME EL LISTADO PRINCIPAL
+ * Se llama cuando comienza el arrastre de un elemento o al moverse sobre
+ * otro contenedor.
+ *
+ * Comportamiento clave:
+ * - En las cajas de división se REMUEVE .expanded de todas, de modo que
+ *   sólo la caja activa (la que se agrega después con expandContainer)
+ *   queda visiblemente expandida.
+ * - Al listado principal se le agrega .compressed (mantiene el
+ *   comportamiento previo de achicarlo durante el drag).
+ * - No se agrega .compressed a las cajas de división: eso producía una
+ *   "expansión fantasma" de 50px al hacer mousedown sobre un departamento
+ *   (SortableJS dispara onChoose → esta función → .compressed expandía la
+ *   lista interna de cada caja, sin mostrar su contenido por opacity: 0).
  */
 function compressAllLists() {
-    // Comprimir todas las cajas de división
+    // Colapsar cajas de división: sólo una puede estar expandida durante el drag.
     for (let i = 1; i <= currentDivisionCount; i++) {
         const divisionList = document.getElementById(`division-${i}`);
         if (divisionList) {
-            divisionList.parentElement.classList.add('compressed');
+            const groupBox = divisionList.closest('.group-box');
+            if (groupBox) {
+                groupBox.classList.remove('expanded');
+            }
         }
     }
     
-    // Comprimir listado principal
+    // Comprimir listado principal (mantiene comportamiento existente)
     const allDepartmentsList = document.getElementById('all-departments-list');
-    if (allDepartmentsList) {
+    if (allDepartmentsList && allDepartmentsList.parentElement) {
         allDepartmentsList.parentElement.classList.add('compressed');
+        allDepartmentsList.parentElement.classList.remove('expanded');
     }
 }
 
