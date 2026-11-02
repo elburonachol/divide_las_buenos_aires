@@ -268,13 +268,21 @@ function updateDepartmentGroups() {
 }
 
 // =============================================
-// SISTEMA DE DRAG & DROP CON REDIMENSIONAMIENTO DINÁMICO
+// SISTEMA DE DRAG & DROP CON SORTABLEJS
 // =============================================
 
 /**
  * INICIALIZA EL SISTEMA DE DRAG & DROP CON SORTABLEJS
- * Configura todas las listas (principal y divisiones) para arrastrar elementos
- * con redimensionamiento dinámico
+ *
+ * Estrategia de expansión visual durante el arrastre:
+ * - La caja de división bajo el cursor se expande por :hover natural del CSS
+ *   (ver drag-drop.css → "body.dragging-active .group-box:hover .group-list").
+ * - Para que :hover se active sobre la caja destino y no sobre el clon que
+ *   sigue al cursor, el clon (.dragging-item) tiene pointer-events: none.
+ * - La clase .dragging-active en el body reduce el delay de transición a 0s
+ *   mientras dura el arrastre, logrando expansión inmediata.
+ * - forzamos forceFallback: true para que SortableJS no use el drag nativo
+ *   HTML5 (que no respeta bien pointer-events ni :hover durante el arrastre).
  */
 function initializeDragAndDrop() {
     const allDepartmentsList = document.getElementById('all-departments-list');
@@ -288,33 +296,41 @@ function initializeDragAndDrop() {
         return;
     }
 
+    // Opciones compartidas por todas las listas Sortable.
+    // El group.name DEBE ser idéntico en todas para permitir mover elementos
+    // entre el listado principal y las divisiones (y entre divisiones).
+    const commonSortableOptions = {
+        group: {
+            name: 'departamentos',
+            pull: true,
+            put: true
+        },
+        animation: 150,
+        ghostClass: 'dragging',
+        dragClass: 'dragging-item',
+        // Usar el fallback de mouse en lugar del drag nativo HTML5:
+        // nos permite controlar pointer-events del clon y habilitar :hover
+        // sobre la caja de división que está debajo del cursor.
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackTolerance: 3,
+        onChoose: function(evt) {
+            // Activar modo drag: el CSS expande sin delay la caja bajo :hover.
+            document.body.classList.add('dragging-active');
+            // Comprimir el listado principal para dar más espacio visual.
+            compressMainListDuringDrag();
+        },
+        onUnchoose: function(evt) {
+            // Restaurar el estado visual al salir del drag.
+            document.body.classList.remove('dragging-active');
+            restoreMainListAfterDrag();
+        }
+    };
+
     // Configurar lista principal de departamentos
     Sortable.create(allDepartmentsList, {
-        group: {
-            name: 'departments',
-            pull: true, // Los elementos se clonan al arrastrar desde aquí
-            put: true      // Se pueden soltar elementos aquí
-        },
-        sort: true,        // Permitir reordenamiento interno
-        animation: 150,    // Duración de animaciones
-        ghostClass: 'dragging', // Clase CSS durante arrastre
-        dragClass: 'dragging-item', // Clase para el elemento que se está arrastrando
-        // Cuando se empieza a arrastrar
-        onChoose: function(evt) {
-            // Comprimir todas las listas
-            compressAllLists();
-        },
-        // Cuando se mueve sobre otro contenedor
-        onMove: function(evt) {
-            // Expandir el contenedor sobre el que se está moviendo
-            const toContainer = evt.to;
-            expandContainer(toContainer);
-        },
-        // Cuando se suelta el elemento
-        onUnchoose: function(evt) {
-            // Restaurar todos los contenedores a su tamaño original
-            restoreAllLists();
-        },
+        ...commonSortableOptions,
+        sort: true, // Permitir reordenamiento interno
         onAdd: function(evt) {
             // Reordenar automáticamente después de agregar elemento
             setTimeout(() => {
@@ -322,126 +338,49 @@ function initializeDragAndDrop() {
             }, 100);
         },
         onEnd: function(evt) {
+            document.body.classList.remove('dragging-active');
+            restoreMainListAfterDrag();
             handleDepartmentMove(evt);
-            // Asegurar que se restauren los tamaños
-            restoreAllLists();
         }
     });
 
     // Configurar cada lista de división
     divisionLists.forEach((divisionList, index) => {
-        if (divisionList) {
-            Sortable.create(divisionList, {
-                group: {
-                    name: 'departamentos',
-                    pull: true,
-                    put: true
-                },
-                animation: 150,
-                ghostClass: 'dragging',
-                dragClass: 'dragging-item',
-                onChoose: function(evt) {
-                    // Comprimir todas las listas
-                    compressAllLists();
-                    // Expandir la caja actual inmediatamente
-                    const groupBox = evt.from.closest('.group-box');
-                    if (groupBox) groupBox.classList.add('expanded');
-                },
-                onMove: function(evt) {
-                    // Expandir el contenedor sobre el que se está moviendo
-                    const toContainer = evt.to;
-                    expandContainer(toContainer);
-                },
-                onUnchoose: function(evt) {
-                    // Restaurar todos los contenedores a su tamaño original
-                    restoreAllLists();
-                },
-                onEnd: function(evt) {
-                    handleDepartmentMove(evt);
-                    sortDivisionList(index + 1);
-                    restoreAllLists();
-                }
-            });
-        }
+        if (!divisionList) return;
+        Sortable.create(divisionList, {
+            ...commonSortableOptions,
+            onEnd: function(evt) {
+                document.body.classList.remove('dragging-active');
+                restoreMainListAfterDrag();
+                handleDepartmentMove(evt);
+                sortDivisionList(index + 1);
+            }
+        });
     });
 }
 
 /**
- * COLAPSA TODAS LAS CAJAS DE DIVISIÓN Y COMPRIME EL LISTADO PRINCIPAL
- * Se llama cuando comienza el arrastre de un elemento o al moverse sobre
- * otro contenedor.
- *
- * Comportamiento clave:
- * - En las cajas de división se REMUEVE .expanded de todas, de modo que
- *   sólo la caja activa (la que se agrega después con expandContainer)
- *   queda visiblemente expandida.
- * - Al listado principal se le agrega .compressed (mantiene el
- *   comportamiento previo de achicarlo durante el drag).
- * - No se agrega .compressed a las cajas de división: eso producía una
- *   "expansión fantasma" de 50px al hacer mousedown sobre un departamento
- *   (SortableJS dispara onChoose → esta función → .compressed expandía la
- *   lista interna de cada caja, sin mostrar su contenido por opacity: 0).
+ * COMPRIME EL LISTADO PRINCIPAL DURANTE EL ARRASTRE
+ * Reduce la altura visible del listado para dar más espacio al mapa y a las
+ * divisiones mientras el usuario arrastra departamentos.
+ * (Sólo actúa sobre el listado principal: las cajas de división se manejan
+ * por :hover, ver drag-drop.css.)
  */
-function compressAllLists() {
-    // Colapsar cajas de división: sólo una puede estar expandida durante el drag.
-    for (let i = 1; i <= currentDivisionCount; i++) {
-        const divisionList = document.getElementById(`division-${i}`);
-        if (divisionList) {
-            const groupBox = divisionList.closest('.group-box');
-            if (groupBox) {
-                groupBox.classList.remove('expanded');
-            }
-        }
-    }
-    
-    // Comprimir listado principal (mantiene comportamiento existente)
-    const allDepartmentsList = document.getElementById('all-departments-list');
-    if (allDepartmentsList && allDepartmentsList.parentElement) {
-        allDepartmentsList.parentElement.classList.add('compressed');
-        allDepartmentsList.parentElement.classList.remove('expanded');
+function compressMainListDuringDrag() {
+    const listColumn = document.querySelector('.list-column');
+    if (listColumn) {
+        listColumn.classList.add('compressed');
     }
 }
 
 /**
- * EXPANDE UN CONTENEDOR ESPECÍFICO DURANTE DRAG & DROP
- * @param {HTMLElement} container - El contenedor a expandir
+ * RESTAURA EL LISTADO PRINCIPAL TRAS FINALIZAR EL ARRASTRE
+ * Revierte la compresión aplicada por compressMainListDuringDrag().
  */
-function expandContainer(container) {
-    // Primero, comprimir todos los contenedores
-    compressAllLists();
-    
-    // Luego expandir el contenedor objetivo
-    if (container.id === 'all-departments-list') {
-        container.parentElement.classList.add('expanded');
-    } else if (container.id.startsWith('division-')) {
-        // Es una división: agregar clase expanded al group-box padre
-        const groupBox = container.closest('.group-box');
-        if (groupBox) {
-            groupBox.classList.add('expanded');
-        }
-    }
-}
-
-/**
- * RESTAURA TODAS LAS LISTAS A SU TAMAÑO ORIGINAL
- * Se llama cuando se suelta el elemento arrastrado
- */
-function restoreAllLists() {
-    // Restaurar todas las cajas de división
-    for (let i = 1; i <= currentDivisionCount; i++) {
-        const divisionList = document.getElementById(`division-${i}`);
-        if (divisionList) {
-            const groupBox = divisionList.closest('.group-box');
-            if (groupBox) {
-                groupBox.classList.remove('expanded', 'compressed');
-            }
-        }
-    }
-    
-    // Restaurar listado principal
-    const allDepartmentsList = document.getElementById('all-departments-list');
-    if (allDepartmentsList) {
-        allDepartmentsList.parentElement.classList.remove('compressed', 'expanded');
+function restoreMainListAfterDrag() {
+    const listColumn = document.querySelector('.list-column');
+    if (listColumn) {
+        listColumn.classList.remove('compressed', 'expanded');
     }
 }
 
