@@ -75,7 +75,7 @@
 /* Efectos de expansión para drag-and-drop
    IMPORTANTE: no agregar aquí una regla para `.group-box.compressed .group-list`
    que expanda el contenedor. El estado base ya está colapsado (max-height: 0)
-   y la expansión debe venir SÓLO por :hover o por la clase .is-drag-target. */
+   y la expansión debe venir SÓLO por hover o por la clase .is-drag-target. */
 
 /* Para el listado de departamentos */
 .list-column.compressed .departments-list {
@@ -176,17 +176,12 @@
 
 /* =============================================
    CAJAS DE DIVISIÓN CONTRAÍBLES
-   - Estado retraído (sin hover, sin drag): sólo el título visible.
-   - Hover (sin drag): se expande mostrando el contenido con un pequeño
-     retardo (0.4s).
-   - Durante drag (body.is-dragging):
-       * Cada caja tiene un "hit area" invisible de ~40px para que
-         SortableJS detecte el destino aunque el contenido esté oculto.
-       * La caja bajo el cursor (con clase .is-drag-target) se expande
-         completamente (150px) mostrando sus departamentos.
+   - Estado retraído: sólo el título visible.
+   - Hover sin arrastre: se expande después del retardo actual (0.4s).
+   - Durante un arrastre real: sólo se expande la caja bajo el cursor.
    ============================================= */
 
-/* Altura base de la caja en estado colapsado: ~2x altura del título */
+/* Altura base de la caja en estado colapsado */
 .group-box {
     min-height: 60px;
     padding: 8px 15px;
@@ -213,7 +208,7 @@
     padding: 0 10px;
 }
 
-/* Hover sin drag: se expande después de 0.4s (comportamiento previo) */
+/* Hover normal: una sola caja se expande después del retardo actual */
 body:not(.is-dragging) .group-box:hover .group-list {
     max-height: 150px;
     overflow-y: auto;
@@ -223,27 +218,14 @@ body:not(.is-dragging) .group-box:hover .group-list {
     padding: 8px 10px;
 }
 
-/* Durante drag: cada caja tiene un "hit area" invisible (~40px)
-   para que SortableJS pueda detectarla como destino de drop.
-   Al no mostrar contenido (opacity: 0, overflow: hidden), no se ve
-   una expansión fantasma; el usuario sólo ve altura vacía entre el
-   título y el borde de la caja. */
-body.is-dragging .group-box .group-list {
-    min-height: 40px;
-    max-height: 40px;
-    opacity: 0;
-    margin-top: 8px;
-    padding: 0 10px;
-    overflow: hidden;
-    transition-delay: 0s;
-}
-
-/* Durante drag: la caja bajo el cursor se expande completamente */
+/* Durante un arrastre real, sólo la caja objetivo se expande inmediatamente.
+   No se crea un área de 40px en todas las cajas, evitando que el layout salte. */
 body.is-dragging .group-box.is-drag-target .group-list {
-    min-height: 150px;
+    min-height: 40px;
     max-height: 150px;
     opacity: 1;
     overflow-y: auto;
+    margin-top: 8px;
     padding: 8px 10px;
     transition-delay: 0s;
 }
