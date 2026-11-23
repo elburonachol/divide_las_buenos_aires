@@ -40,6 +40,10 @@ function initializeDivisionBoxes(newCount) {
         processDivisionReduction(newCount, previousGroups);
     }
     
+    // Limpiar estados visuales residuales antes de recrear las cajas
+    document.body.classList.remove('is-dragging');
+    collapseAllGroupBoxes();
+    
     // Actualizar contador global
     currentDivisionCount = newCount;
     container.innerHTML = '';
@@ -58,9 +62,7 @@ function initializeDivisionBoxes(newCount) {
         const groupBox = document.createElement('div');
         groupBox.className = 'group-box';
         groupBox.setAttribute('data-group-id', i);
-        // Reemplazarla por:
         groupBox.style.borderLeft = `8px solid ${color}`;
-        // Generar un tono claro del color para el fondo de la caja
         groupBox.style.background = hexToLightTint(color, 0.85);
 
         groupBox.innerHTML = `
@@ -273,8 +275,7 @@ function updateDepartmentGroups() {
 
 /**
  * INICIALIZA EL SISTEMA DE DRAG & DROP CON SORTABLEJS
- * Configura todas las listas (principal y divisiones) para arrastrar elementos
- * con redimensionamiento dinámico.
+ * Configura todas las listas (principal y divisiones) para arrastrar elementos.
  *
  * El grupo de las Sortables es 'departamentos' en TODOS los contenedores
  * (listado principal y cajas de división) para que SortableJS pueda mover
@@ -292,6 +293,13 @@ function initializeDragAndDrop() {
         return;
     }
 
+    // Seguir el puntero durante un arrastre real para expandir sólo
+    // la caja de división que está bajo el cursor.
+    if (!window.divisionDragPointerListenerInitialized) {
+        document.addEventListener('pointermove', updateDragTargetFromPointer);
+        window.divisionDragPointerListenerInitialized = true;
+    }
+
     // Configurar lista principal de departamentos
     Sortable.create(allDepartmentsList, {
         group: {
@@ -303,7 +311,7 @@ function initializeDragAndDrop() {
         animation: 150,
         ghostClass: 'dragging',
         dragClass: 'dragging-item',
-        onChoose: handleDragChoose,
+        onStart: handleDragStart,
         onMove: handleDragMove,
         onUnchoose: handleDragUnchoose,
         onAdd: function(evt) {
@@ -329,7 +337,7 @@ function initializeDragAndDrop() {
                 animation: 150,
                 ghostClass: 'dragging',
                 dragClass: 'dragging-item',
-                onChoose: handleDragChoose,
+                onStart: handleDragStart,
                 onMove: handleDragMove,
                 onUnchoose: handleDragUnchoose,
                 onEnd: function(evt) {
@@ -341,28 +349,19 @@ function initializeDragAndDrop() {
 }
 
 /**
- * HANDLER: INICIO DEL DRAG (onChoose)
- * - Marca el body con la clase .is-dragging para activar los estilos
- *   de drag (hit areas invisibles en cada caja de división).
- * - Si el drag se origina en una caja de división, marca esa caja como
- *   objetivo inicial (la que estaba bajo el cursor al iniciar el drag).
+ * HANDLER: INICIO DEL DRAG REAL (onStart)
+ * Se activa una vez que comenzó el movimiento de arrastre, no al hacer
+ * simplemente click sobre un departamento.
  * @param {Object} evt - Evento de SortableJS
  */
-function handleDragChoose(evt) {
+function handleDragStart(evt) {
     document.body.classList.add('is-dragging');
-    
-    // Marcar como objetivo la caja de origen (si aplica)
-    const fromGroupBox = evt.from.closest('.group-box');
-    if (fromGroupBox) {
-        fromGroupBox.classList.add('is-drag-target');
-    }
+    updateDragTargetFromPointer(evt);
 }
 
 /**
  * HANDLER: MOVIMIENTO DURANTE EL DRAG (onMove)
- * Detecta por puntero qué caja de división está bajo el cursor y le
- * aplica .is-drag-target (quitándosela a las demás). Si el puntero no
- * está sobre ninguna caja de división, deja todas colapsadas.
+ * Actualiza la caja de división que está bajo el cursor.
  * @param {Object} evt - Evento de SortableJS
  */
 function handleDragMove(evt) {
@@ -370,8 +369,8 @@ function handleDragMove(evt) {
 }
 
 /**
- * HANDLER: FIN DEL DRAG SIN DROP (onUnchoose)
- * Limpia las clases de drag y deja todas las cajas colapsadas.
+ * HANDLER: FIN DEL DRAG (onUnchoose)
+ * Limpia las clases temporales de arrastre.
  * @param {Object} evt - Evento de SortableJS
  */
 function handleDragUnchoose(evt) {
@@ -397,18 +396,21 @@ function handleDragEnd(evt, sortAfter) {
 
 /**
  * ACTUALIZA LA CAJA DE DIVISIÓN OBJETIVO DEL DRAG SEGÚN EL PUNTERO
- * Usa las coordenadas del evento original (clientX/clientY) para
- * encontrar cuál .group-box está bajo el cursor, y le aplica la clase
- * .is-drag-target. Si no hay ninguna bajo el cursor, quita la clase de
- * todas.
- * @param {Object} evt - Evento de SortableJS (con evt.originalEvent)
+ * Durante un arrastre real, busca la caja bajo el cursor y marca sólo esa
+ * como objetivo. También acepta los eventos nativos de pointermove.
+ * @param {Object} evt - Evento de SortableJS o PointerEvent
  */
 function updateDragTargetFromPointer(evt) {
-    const originalEvent = evt.originalEvent;
-    if (!originalEvent) return;
+    if (!document.body.classList.contains('is-dragging')) return;
+
+    const pointerEvent = evt.originalEvent || evt;
+    if (typeof pointerEvent.clientX !== 'number' ||
+        typeof pointerEvent.clientY !== 'number') {
+        return;
+    }
     
-    const clientX = originalEvent.clientX;
-    const clientY = originalEvent.clientY;
+    const clientX = pointerEvent.clientX;
+    const clientY = pointerEvent.clientY;
     
     // Buscar la caja de división bajo el puntero
     const allBoxes = document.querySelectorAll('.group-box');
@@ -435,7 +437,6 @@ function updateDragTargetFromPointer(evt) {
 /**
  * COLAPSA TODAS LAS CAJAS DE DIVISIÓN
  * Remueve la clase .is-drag-target de todas las .group-box.
- * Se llama al terminar el drag o al pasar el puntero fuera de cualquier caja.
  */
 function collapseAllGroupBoxes() {
     document.querySelectorAll('.group-box').forEach(box => {
@@ -446,8 +447,7 @@ function collapseAllGroupBoxes() {
 /**
  * RESTAURA TODAS LAS LISTAS A SU ESTADO NORMAL
  * Limpia clases de drag y expansión. Se conserva como utilidad por si
- * algún flujo externo la invoca (aunque los nuevos handlers ya hacen
- * la limpieza vía handleDragUnchoose / handleDragEnd).
+ * algún flujo externo la invoca.
  */
 function restoreAllLists() {
     document.body.classList.remove('is-dragging');
@@ -477,7 +477,8 @@ function restoreAllLists() {
 function handleDepartmentMove(evt) {
     const draggedItem = evt.item;
     const toElement = evt.to;
-    const fromElement = evt.from;
+
+    if (!draggedItem || !toElement) return;
 
     // Determinar si estamos moviendo un departamento seleccionado
     const hasSelectedDepartments = selectedDepartmentsSet.size > 0;
@@ -535,7 +536,16 @@ function handleDepartmentMove(evt) {
 
     // Actualizar todo el estado de la aplicación
     notifyStateChange();
-    sortMainList();
+
+    // Ordenar el destino alfabéticamente
+    if (toElement.id === 'all-departments-list') {
+        sortMainList();
+    } else if (toElement.id.startsWith('division-')) {
+        const destinationDivisionId = parseInt(toElement.id.replace('division-', ''), 10);
+        if (!Number.isNaN(destinationDivisionId)) {
+            sortDivisionList(destinationDivisionId);
+        }
+    }
 }
 
 /**
