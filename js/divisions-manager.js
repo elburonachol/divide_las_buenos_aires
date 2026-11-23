@@ -293,6 +293,12 @@ function initializeDragAndDrop() {
         return;
     }
 
+    // Evitar agregar más de una instancia de Sortable al listado principal
+    const existingMainSortable = Sortable.get(allDepartmentsList);
+    if (existingMainSortable) {
+        existingMainSortable.destroy();
+    }
+
     // Seguir el puntero durante un arrastre real para expandir sólo
     // la caja de división que está bajo el cursor.
     if (!window.divisionDragPointerListenerInitialized) {
@@ -375,72 +381,160 @@ function handleDragMove(evt) {
  */
 function handleDragUnchoose(evt) {
     document.body.classList.remove('is-dragging');
+    clearDivisionDragTargetTimer();
     collapseAllGroupBoxes();
 }
 
 /**
  * HANDLER: FIN DEL DRAG CON DROP (onEnd)
- * Limpia las clases de drag, procesa el movimiento y reordena la lista
- * afectada (listado principal o división).
+ * Antes de limpiar las clases, resuelve la caja bajo el puntero como destino
+ * explícito. Esto permite soltar sobre el área de destino aunque SortableJS
+ * no haya detectado la lista comprimida durante su propio hit testing.
  * @param {Object} evt - Evento de SortableJS
  * @param {Function} [sortAfter] - Callback para reordenar tras el movimiento
  */
 function handleDragEnd(evt, sortAfter) {
+    const pointerPosition = getDragPointerPosition(evt);
+    let targetBox = null;
+
+    if (pointerPosition) {
+        targetBox = getGroupBoxAtPointer(
+            pointerPosition.clientX,
+            pointerPosition.clientY
+        );
+    }
+
+    // Si el evento final no incluye coordenadas, conservar el último objetivo
+    if (!targetBox) {
+        targetBox = document.querySelector('.group-box.is-drag-target');
+    }
+
     document.body.classList.remove('is-dragging');
+    clearDivisionDragTargetTimer();
     collapseAllGroupBoxes();
-    handleDepartmentMove(evt);
+
+    // Si el puntero terminó sobre una caja, usar su lista como destino real
+    const destinationList = targetBox
+        ? targetBox.querySelector('.group-list')
+        : null;
+
+    if (destinationList) {
+        handleDepartmentMove({
+            ...evt,
+            to: destinationList
+        });
+    } else {
+        handleDepartmentMove(evt);
+    }
+
     if (typeof sortAfter === 'function') {
         sortAfter();
     }
 }
 
 /**
+ * OBTIENE LAS COORDENADAS DEL PUNTERO
+ * Acepta eventos de SortableJS, PointerEvent y eventos táctiles.
+ * @param {Object} evt - Evento de SortableJS o evento del puntero
+ * @returns {Object|null} - Coordenadas clientX/clientY o null
+ */
+function getDragPointerPosition(evt) {
+    const pointerEvent = evt && (evt.originalEvent || evt);
+    if (!pointerEvent) return null;
+
+    const touch = pointerEvent.changedTouches && pointerEvent.changedTouches[0]
+        ? pointerEvent.changedTouches[0]
+        : pointerEvent.touches && pointerEvent.touches[0]
+            ? pointerEvent.touches[0]
+            : null;
+
+    const position = touch || pointerEvent;
+
+    if (typeof position.clientX !== 'number' ||
+        typeof position.clientY !== 'number') {
+        return null;
+    }
+
+    return {
+        clientX: position.clientX,
+        clientY: position.clientY
+    };
+}
+
+/**
+ * BUSCA LA CAJA DE DIVISIÓN BAJO LAS COORDENADAS DEL PUNTERO
+ * @param {number} clientX - Coordenada horizontal del puntero
+ * @param {number} clientY - Coordenada vertical del puntero
+ * @returns {HTMLElement|null} - Caja bajo el puntero o null
+ */
+function getGroupBoxAtPointer(clientX, clientY) {
+    const allBoxes = document.querySelectorAll('.group-box');
+
+    for (const box of allBoxes) {
+        const rect = box.getBoundingClientRect();
+        if (clientX >= rect.left && clientX <= rect.right &&
+            clientY >= rect.top && clientY <= rect.bottom) {
+            return box;
+        }
+    }
+
+    return null;
+}
+
+/**
  * ACTUALIZA LA CAJA DE DIVISIÓN OBJETIVO DEL DRAG SEGÚN EL PUNTERO
- * Durante un arrastre real, busca la caja bajo el cursor y marca sólo esa
- * como objetivo. También acepta los eventos nativos de pointermove.
+ * Al entrar en una caja, crea un área de destino de 40 px. Si el puntero
+ * permanece allí, expande la lista después de 0.4 segundos.
  * @param {Object} evt - Evento de SortableJS o PointerEvent
  */
 function updateDragTargetFromPointer(evt) {
     if (!document.body.classList.contains('is-dragging')) return;
 
-    const pointerEvent = evt.originalEvent || evt;
-    if (typeof pointerEvent.clientX !== 'number' ||
-        typeof pointerEvent.clientY !== 'number') {
-        return;
+    const pointerPosition = getDragPointerPosition(evt);
+    if (!pointerPosition) return;
+
+    const targetBox = getGroupBoxAtPointer(
+        pointerPosition.clientX,
+        pointerPosition.clientY
+    );
+    const currentTarget = document.querySelector('.group-box.is-drag-target');
+
+    // Si no cambió la caja objetivo, no reiniciar el retardo
+    if (targetBox === currentTarget) return;
+
+    clearDivisionDragTargetTimer();
+    collapseAllGroupBoxes();
+
+    if (!targetBox) return;
+
+    targetBox.classList.add('is-drag-target');
+
+    // Expandir la lista si el puntero permanece sobre esta caja
+    window.divisionDragTargetTimer = setTimeout(() => {
+        if (document.body.classList.contains('is-dragging') &&
+            targetBox.classList.contains('is-drag-target')) {
+            targetBox.classList.add('is-drag-target-expanded');
+        }
+    }, 400);
+}
+
+/**
+ * LIMPIA EL RETARDO PENDIENTE DE EXPANSIÓN DEL OBJETIVO
+ */
+function clearDivisionDragTargetTimer() {
+    if (window.divisionDragTargetTimer) {
+        clearTimeout(window.divisionDragTargetTimer);
+        window.divisionDragTargetTimer = null;
     }
-    
-    const clientX = pointerEvent.clientX;
-    const clientY = pointerEvent.clientY;
-    
-    // Buscar la caja de división bajo el puntero
-    const allBoxes = document.querySelectorAll('.group-box');
-    let targetBox = null;
-    
-    allBoxes.forEach(box => {
-        const rect = box.getBoundingClientRect();
-        if (clientX >= rect.left && clientX <= rect.right &&
-            clientY >= rect.top && clientY <= rect.bottom) {
-            targetBox = box;
-        }
-    });
-    
-    // Actualizar clases: sólo la caja bajo el cursor queda como objetivo
-    allBoxes.forEach(box => {
-        if (box === targetBox) {
-            box.classList.add('is-drag-target');
-        } else {
-            box.classList.remove('is-drag-target');
-        }
-    });
 }
 
 /**
  * COLAPSA TODAS LAS CAJAS DE DIVISIÓN
- * Remueve la clase .is-drag-target de todas las .group-box.
+ * Remueve las clases temporales de objetivo y expansión.
  */
 function collapseAllGroupBoxes() {
     document.querySelectorAll('.group-box').forEach(box => {
-        box.classList.remove('is-drag-target');
+        box.classList.remove('is-drag-target', 'is-drag-target-expanded');
     });
 }
 
@@ -451,6 +545,7 @@ function collapseAllGroupBoxes() {
  */
 function restoreAllLists() {
     document.body.classList.remove('is-dragging');
+    clearDivisionDragTargetTimer();
     collapseAllGroupBoxes();
     
     // Compatibilidad: remover .compressed/.expanded por si quedaron residuales
