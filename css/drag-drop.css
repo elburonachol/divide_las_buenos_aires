@@ -178,7 +178,8 @@
    CAJAS DE DIVISIÓN CONTRAÍBLES
    - Estado retraído: sólo el título visible.
    - Hover sin arrastre: se expande después del retardo actual (0.4s).
-   - Durante un arrastre real: sólo se expande la caja bajo el cursor.
+   - Durante un arrastre real: la caja bajo el cursor recibe primero un
+     área de destino de 40px y después puede expandirse.
    ============================================= */
 
 /* Altura base de la caja en estado colapsado */
@@ -218,16 +219,28 @@ body:not(.is-dragging) .group-box:hover .group-list {
     padding: 8px 10px;
 }
 
-/* Durante un arrastre real, sólo la caja objetivo se expande inmediatamente.
-   No se crea un área de 40px en todas las cajas, evitando que el layout salte. */
+/* Durante un arrastre, sólo la caja bajo el puntero recibe el área de destino.
+   Esta área está disponible inmediatamente, sin mostrar los departamentos. */
 body.is-dragging .group-box.is-drag-target .group-list {
+    box-sizing: border-box;
     min-height: 40px;
-    max-height: 150px;
+    max-height: 40px;
+    overflow: hidden;
     opacity: 1;
-    overflow-y: auto;
     margin-top: 8px;
-    padding: 8px 10px;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px dashed #3498db;
     transition-delay: 0s;
+}
+
+/* Si el puntero permanece sobre la caja, mostrar su lista después del retardo */
+body.is-dragging .group-box.is-drag-target-expanded .group-list {
+    min-height: 150px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    border-style: solid;
 }
 
 /* Scrollbar dentro de las cajas de división */
